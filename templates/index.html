@@ -1,0 +1,2451 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Water Crisis Prediction Map — West Bengal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Exo+2:wght@300;400;500;600&family=Share+Tech+Mono&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-dark: #02050e;
+            --bg-panel: rgba(3, 12, 30, 0.94);
+            --cyan: #00f5ff;
+            --cyan-dim: rgba(0, 245, 255, 0.12);
+            --cyan-glow: 0 0 12px #00f5ff88, 0 0 30px #00f5ff22;
+            --blue: #1a6fff;
+            --red: #ff2e2e;
+            --red-glow: 0 0 14px #ff2e2e88;
+            --orange: #ff8c00;
+            --orange-glow: 0 0 10px #ff8c0088;
+            --green: #00ff88;
+            --green-glow: 0 0 10px #00ff8888;
+            --purple: #a855f7;
+            --purple-dim: rgba(168, 85, 247, 0.15);
+            --purple-glow: 0 0 12px rgba(168, 85, 247, 0.5);
+            --border: rgba(0, 245, 255, 0.18);
+            --border-bright: rgba(0, 245, 255, 0.55);
+            --text-main: #c0deff;
+            --text-dim: #5a8899;
+            --font-head: 'Orbitron', sans-serif;
+            --font-body: 'Exo 2', sans-serif;
+            --font-mono: 'Share Tech Mono', monospace;
+            --panel-w: 238px;
+        }
+
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            background: var(--bg-dark);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            cursor: crosshair;
+        }
+
+        body.light-theme {
+            --bg-dark: #e8f4f8;
+            --bg-panel: rgba(240, 248, 255, 0.96);
+            --text-main: #0a1628;
+            --text-dim: #4a6070;
+            --border: rgba(0, 100, 160, 0.25);
+            --border-bright: rgba(0, 150, 200, 0.6);
+        }
+
+        body.light-theme #topbar {
+            background: linear-gradient(90deg, rgba(200, 230, 255, 0.99), rgba(220, 240, 255, 0.97) 50%, rgba(200, 230, 255, 0.99));
+        }
+
+        body.light-theme .panel-card {
+            background: rgba(240, 248, 255, 0.96);
+            border-color: rgba(0, 150, 200, 0.3);
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, 0.05) 2px, rgba(0, 0, 0, 0.05) 4px);
+            pointer-events: none;
+            z-index: 9997;
+        }
+
+        body.light-theme::before {
+            display: none;
+        }
+
+        .corner {
+            position: fixed;
+            width: 36px;
+            height: 36px;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        .corner-tl {
+            top: 10px;
+            left: 10px;
+            border-top: 2px solid var(--cyan);
+            border-left: 2px solid var(--cyan);
+        }
+
+        .corner-tr {
+            top: 10px;
+            right: 10px;
+            border-top: 2px solid var(--cyan);
+            border-right: 2px solid var(--cyan);
+        }
+
+        .corner-bl {
+            bottom: 10px;
+            left: 10px;
+            border-bottom: 2px solid var(--cyan);
+            border-left: 2px solid var(--cyan);
+        }
+
+        .corner-br {
+            bottom: 10px;
+            right: 10px;
+            border-bottom: 2px solid var(--cyan);
+            border-right: 2px solid var(--cyan);
+        }
+
+        /* LOADING */
+        #loading {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-dark);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+        }
+
+        #loading.done {
+            display: none;
+        }
+
+        .load-title {
+            font-family: var(--font-head);
+            font-size: 1.35rem;
+            font-weight: 900;
+            color: var(--cyan);
+            filter: drop-shadow(0 0 12px rgba(0, 245, 255, 0.6));
+            letter-spacing: 0.14em;
+        }
+
+        .load-sub {
+            font-family: var(--font-head);
+            font-size: 0.55rem;
+            letter-spacing: 0.5em;
+            color: var(--text-dim);
+        }
+
+        .load-bar-wrap {
+            width: 260px;
+            height: 3px;
+            background: rgba(0, 245, 255, 0.1);
+        }
+
+        .load-bar-fill {
+            height: 100%;
+            background: var(--cyan);
+            box-shadow: var(--cyan-glow);
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        .load-status {
+            font-family: var(--font-mono);
+            font-size: 0.58rem;
+            color: var(--text-dim);
+            letter-spacing: 0.1em;
+        }
+
+        /* TOPBAR */
+        #topbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 52px;
+            background: linear-gradient(90deg, rgba(0, 15, 40, 0.99), rgba(0, 8, 25, 0.97) 50%, rgba(0, 15, 40, 0.99));
+            border-bottom: 1px solid var(--border-bright);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 14px;
+            z-index: 1000;
+            box-shadow: 0 2px 40px rgba(0, 245, 255, 0.1);
+            gap: 8px;
+        }
+
+        .brand {
+            font-family: var(--font-head);
+            font-size: 0.9rem;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            background: linear-gradient(90deg, var(--cyan), #7ee8ff, var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 300% auto;
+            animation: shimmer 4s linear infinite;
+            filter: drop-shadow(0 0 6px rgba(0, 245, 255, 0.4));
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 0% center
+            }
+
+            100% {
+                background-position: 300% center
+            }
+        }
+
+        .tab-bar {
+            display: flex;
+            gap: 3px;
+            flex-shrink: 0;
+        }
+
+        .tab {
+            font-family: var(--font-head);
+            font-size: 0.5rem;
+            letter-spacing: 0.08em;
+            padding: 5px 10px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: all 0.25s;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .tab:hover,
+        .tab.active {
+            border-color: var(--cyan);
+            color: var(--cyan);
+            background: var(--cyan-dim);
+            box-shadow: var(--cyan-glow);
+        }
+
+        .tab[data-tab="stress"].active {
+            border-color: var(--orange);
+            color: var(--orange);
+            background: rgba(255, 140, 0, 0.1);
+            box-shadow: var(--orange-glow);
+        }
+
+        .tab[data-tab="pollution"].active {
+            border-color: var(--purple);
+            color: var(--purple);
+            background: var(--purple-dim);
+            box-shadow: var(--purple-glow);
+        }
+
+        .tab[data-tab="drought"].active {
+            border-color: #e67e22;
+            color: #e67e22;
+            background: rgba(230, 126, 34, 0.1);
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .tb-btn {
+            font-family: var(--font-head);
+            font-size: 0.48rem;
+            letter-spacing: 0.08em;
+            padding: 4px 10px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .tb-btn:hover,
+        .tb-btn.active {
+            border-color: var(--cyan);
+            color: var(--cyan);
+            background: var(--cyan-dim);
+            box-shadow: var(--cyan-glow);
+        }
+
+        .topbar-meta {
+            font-family: var(--font-mono);
+            font-size: 0.58rem;
+            color: var(--text-dim);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 1px;
+        }
+
+        .live-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: var(--green-glow);
+            margin-right: 4px;
+            animation: pulsate 1.6s ease-in-out infinite;
+        }
+
+        @keyframes pulsate {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1)
+            }
+
+            50% {
+                opacity: 0.3;
+                transform: scale(0.7)
+            }
+        }
+
+        #refresh-countdown {
+            font-family: var(--font-mono);
+            font-size: 0.5rem;
+            color: var(--orange);
+            padding: 3px 8px;
+            border: 1px solid rgba(255, 140, 0, 0.3);
+            background: rgba(255, 140, 0, 0.06);
+            cursor: pointer;
+        }
+
+        #refresh-countdown:hover {
+            border-color: var(--orange);
+            box-shadow: var(--orange-glow);
+        }
+
+        /* MAP */
+        #map {
+            position: fixed;
+            inset: 52px 0 0 0;
+            z-index: 1;
+        }
+
+        .leaflet-container {
+            background: #010812 !important;
+            font-family: var(--font-body) !important;
+        }
+
+        .leaflet-tooltip {
+            background: rgba(0, 8, 25, 0.97) !important;
+            border: 1px solid var(--cyan) !important;
+            color: var(--cyan) !important;
+            font-family: var(--font-mono) !important;
+            font-size: 0.68rem !important;
+            border-radius: 0 !important;
+            box-shadow: var(--cyan-glow) !important;
+            padding: 4px 8px !important;
+        }
+
+        .leaflet-popup-content-wrapper {
+            background: rgba(1, 10, 28, 0.98) !important;
+            border: 1px solid var(--cyan) !important;
+            border-radius: 0 !important;
+            color: var(--text-main) !important;
+            font-family: var(--font-body) !important;
+            box-shadow: var(--cyan-glow) !important;
+        }
+
+        .leaflet-popup-tip {
+            background: var(--cyan) !important;
+        }
+
+        .leaflet-control-layers {
+            background: rgba(2, 12, 30, 0.96) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 0 !important;
+            color: var(--text-main) !important;
+        }
+
+        .leaflet-bar a {
+            background: rgba(2, 12, 30, 0.96) !important;
+            border-color: var(--border) !important;
+            color: var(--cyan) !important;
+        }
+
+        .leaflet-bar a:hover {
+            background: var(--cyan-dim) !important;
+        }
+
+        .leaflet-control-attribution {
+            background: rgba(0, 3, 10, 0.85) !important;
+            color: #223 !important;
+            font-size: 9px !important;
+        }
+
+        /* PANELS */
+        #left-panel,
+        #right-panel {
+            position: fixed;
+            top: 62px;
+            width: var(--panel-w);
+            z-index: 500;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: calc(100vh - 130px);
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 245, 255, 0.2) transparent;
+        }
+
+        #left-panel {
+            left: 14px;
+        }
+
+        #right-panel {
+            right: 14px;
+        }
+
+        #left-panel::-webkit-scrollbar,
+        #right-panel::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        #left-panel::-webkit-scrollbar-thumb,
+        #right-panel::-webkit-scrollbar-thumb {
+            background: rgba(0, 245, 255, 0.2);
+            border-radius: 2px;
+        }
+
+        .panel-card {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            padding: 11px 13px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(0, 245, 255, 0.08);
+        }
+
+        .panel-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+            opacity: 0.5;
+        }
+
+        .card-title {
+            font-family: var(--font-head);
+            font-size: 0.58rem;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            color: var(--cyan);
+            text-transform: uppercase;
+            margin-bottom: 9px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(0, 245, 255, 0.05);
+            font-size: 0.68rem;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: var(--text-dim);
+            font-size: 0.61rem;
+        }
+
+        .info-value {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .risk-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(0, 245, 255, 0.05);
+        }
+
+        .risk-row:last-child {
+            border-bottom: none;
+        }
+
+        .risk-label {
+            font-size: 0.61rem;
+            color: var(--text-dim);
+        }
+
+        .risk-badge {
+            font-family: var(--font-head);
+            font-size: 0.55rem;
+            font-weight: 700;
+            padding: 2px 7px;
+            letter-spacing: 0.07em;
+        }
+
+        .risk-high {
+            color: var(--red);
+            border: 1px solid var(--red);
+            box-shadow: var(--red-glow);
+            animation: blinkRed 2.2s ease-in-out infinite;
+        }
+
+        .risk-moderate {
+            color: var(--orange);
+            border: 1px solid var(--orange);
+            box-shadow: var(--orange-glow);
+        }
+
+        .risk-low {
+            color: var(--green);
+            border: 1px solid var(--green);
+            box-shadow: var(--green-glow);
+        }
+
+        @keyframes blinkRed {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: 0.45
+            }
+        }
+
+        .big-num {
+            font-family: var(--font-head);
+            font-size: 1.7rem;
+            font-weight: 900;
+            line-height: 1;
+            color: var(--cyan);
+            text-shadow: var(--cyan-glow);
+            letter-spacing: -0.03em;
+        }
+
+        .big-num.danger {
+            color: var(--red);
+            text-shadow: var(--red-glow);
+        }
+
+        .big-num.warn {
+            color: var(--orange);
+            text-shadow: var(--orange-glow);
+        }
+
+        .big-num.ok {
+            color: var(--green);
+            text-shadow: var(--green-glow);
+        }
+
+        .prog-wrap {
+            background: rgba(0, 245, 255, 0.07);
+            height: 4px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+
+        .prog-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--blue), var(--cyan));
+            width: 0%;
+            transition: width 1.2s ease;
+        }
+
+        .prog-fill.danger {
+            background: linear-gradient(90deg, #600, var(--red));
+        }
+
+        .prog-fill.warn {
+            background: linear-gradient(90deg, #642, var(--orange));
+        }
+
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            height: 38px;
+            margin-top: 7px;
+        }
+
+        .bar {
+            flex: 1;
+            background: linear-gradient(to top, var(--blue), var(--cyan));
+            border-radius: 1px 1px 0 0;
+            min-height: 3px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .bar:hover {
+            filter: brightness(1.3);
+        }
+
+        .sparkline {
+            display: block;
+            margin-top: 5px;
+            width: 100%;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .stat-box {
+            background: rgba(0, 245, 255, 0.04);
+            border: 1px solid rgba(0, 245, 255, 0.1);
+            padding: 5px 7px;
+            text-align: center;
+        }
+
+        .stat-num {
+            font-family: var(--font-head);
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--cyan);
+        }
+
+        .stat-lbl {
+            font-size: 0.5rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            margin-top: 1px;
+        }
+
+        .rec-item {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            padding: 3px 0 3px 10px;
+            border-left: 2px solid var(--cyan);
+            margin-bottom: 3px;
+            line-height: 1.4;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(0, 245, 255, 0.15);
+            border-top-color: var(--cyan);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 10px auto;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        /* ALERT TICKER */
+        #alert-ticker {
+            position: fixed;
+            bottom: 44px;
+            left: 0;
+            right: 0;
+            height: 24px;
+            background: rgba(255, 46, 46, 0.08);
+            border-top: 1px solid rgba(255, 46, 46, 0.35);
+            border-bottom: 1px solid rgba(255, 46, 46, 0.35);
+            overflow: hidden;
+            z-index: 500;
+            display: flex;
+            align-items: center;
+        }
+
+        .ticker-label {
+            background: var(--red);
+            color: #fff;
+            font-family: var(--font-head);
+            font-size: 0.5rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            padding: 0 10px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .ticker-content {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            color: #ff8888;
+            white-space: nowrap;
+            animation: scroll-ticker 30s linear infinite;
+            padding-left: 20px;
+        }
+
+        @keyframes scroll-ticker {
+            from {
+                transform: translateX(0)
+            }
+
+            to {
+                transform: translateX(-100%)
+            }
+        }
+
+        /* BOTTOM LEGEND */
+        #bottom-legend {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 500;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-bright);
+            padding: 6px 20px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            box-shadow: var(--cyan-glow);
+        }
+
+        .leg-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.65rem;
+            font-weight: 500;
+        }
+
+        .leg-line {
+            width: 24px;
+            height: 3px;
+            border-radius: 2px;
+        }
+
+        .leg-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* MAP STYLE SWITCHER */
+        #map-style-switcher {
+            position: fixed;
+            bottom: 80px;
+            right: 14px;
+            z-index: 600;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .map-style-btn {
+            font-family: var(--font-head);
+            font-size: 0.48rem;
+            letter-spacing: 0.08em;
+            padding: 5px 10px;
+            border: 1px solid var(--border);
+            background: var(--bg-panel);
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .map-style-btn:hover {
+            border-color: var(--cyan);
+            color: var(--cyan);
+            background: var(--cyan-dim);
+        }
+
+        .map-style-btn.active {
+            border-color: var(--cyan);
+            color: var(--cyan);
+            background: var(--cyan-dim);
+            box-shadow: var(--cyan-glow);
+        }
+
+        .map-style-btn[data-style="normal"].active {
+            border-color: var(--green);
+            color: var(--green);
+            background: rgba(0, 255, 136, 0.1);
+            box-shadow: var(--green-glow);
+        }
+
+        .map-style-btn[data-style="satellite"].active {
+            border-color: var(--orange);
+            color: var(--orange);
+            background: rgba(255, 140, 0, 0.1);
+            box-shadow: var(--orange-glow);
+        }
+
+        .map-style-btn[data-style="terrain"].active {
+            border-color: #a0c070;
+            color: #a0c070;
+            background: rgba(160, 192, 112, 0.1);
+        }
+
+        #layer-toggle-btn {
+            font-family: var(--font-head);
+            font-size: 0.48rem;
+            letter-spacing: 0.08em;
+            padding: 5px 10px;
+            border: 1px solid var(--border);
+            background: var(--bg-panel);
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            text-align: center;
+            white-space: nowrap;
+            margin-top: 4px;
+        }
+
+        #layer-toggle-btn.layers-on {
+            border-color: var(--cyan);
+            color: var(--cyan);
+            background: var(--cyan-dim);
+            box-shadow: var(--cyan-glow);
+        }
+
+        #layer-toggle-btn.layers-off {
+            border-color: var(--red);
+            color: var(--red);
+            background: rgba(255, 46, 46, 0.1);
+            box-shadow: var(--red-glow);
+        }
+
+        #heatmap-toggle-btn {
+            font-family: var(--font-head);
+            font-size: 0.48rem;
+            letter-spacing: 0.08em;
+            padding: 5px 10px;
+            border: 1px solid var(--border);
+            background: var(--bg-panel);
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        #heatmap-toggle-btn.hm-on {
+            border-color: #ff6b00;
+            color: #ff6b00;
+            background: rgba(255, 107, 0, 0.1);
+            box-shadow: 0 0 10px rgba(255, 107, 0, 0.4);
+        }
+
+        /* SEARCH OVERLAY */
+        #search-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            background: rgba(0, 3, 12, 0.88);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #search-overlay.open {
+            display: flex;
+        }
+
+        .search-box {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-bright);
+            width: min(600px, 90vw);
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: var(--cyan-glow), 0 30px 80px rgba(0, 0, 0, 0.8);
+        }
+
+        .search-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .search-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--cyan);
+            caret-color: var(--cyan);
+        }
+
+        .search-input::placeholder {
+            color: rgba(0, 245, 255, 0.3);
+        }
+
+        #search-go {
+            font-family: var(--font-head);
+            font-size: 0.55rem;
+            padding: 5px 12px;
+            border: 1px solid var(--cyan);
+            background: var(--cyan-dim);
+            color: var(--cyan);
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        #search-close {
+            font-size: 1rem;
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+        }
+
+        #search-close:hover {
+            color: var(--red);
+        }
+
+        #search-result {
+            padding: 16px;
+        }
+
+        .search-hint {
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            color: var(--text-dim);
+            text-align: center;
+            padding: 20px;
+        }
+
+        .sr-location {
+            font-family: var(--font-head);
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--cyan);
+            margin-bottom: 4px;
+        }
+
+        .sr-district {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+        }
+
+        .sr-summary {
+            font-size: 0.68rem;
+            color: var(--text-main);
+            line-height: 1.5;
+            margin-bottom: 12px;
+            padding: 8px 10px;
+            background: rgba(0, 245, 255, 0.04);
+            border-left: 2px solid var(--cyan);
+        }
+
+        .sr-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .sr-cell {
+            background: rgba(0, 245, 255, 0.04);
+            border: 1px solid var(--border);
+            padding: 8px 10px;
+        }
+
+        .sr-cell-label {
+            font-size: 0.55rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 4px;
+        }
+
+        .sr-cell-value {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--text-main);
+        }
+
+        .sr-risk-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .sr-risk-item {
+            flex: 1;
+            min-width: 80px;
+            background: rgba(0, 245, 255, 0.03);
+            border: 1px solid var(--border);
+            padding: 6px 8px;
+            text-align: center;
+        }
+
+        .sr-risk-label {
+            font-size: 0.5rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            margin-bottom: 4px;
+        }
+
+        .sr-alert-item {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            color: #ff9999;
+            margin: 3px 0;
+            padding: 3px 8px;
+            border-left: 2px solid var(--red);
+            background: rgba(255, 46, 46, 0.05);
+        }
+
+        #sr-go-map-btn {
+            font-family: var(--font-head);
+            font-size: 0.58rem;
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--cyan);
+            background: var(--cyan-dim);
+            color: var(--cyan);
+            cursor: pointer;
+            text-transform: uppercase;
+            margin-top: 6px;
+        }
+
+        /* AI CHAT */
+        #chat-bubble {
+            position: fixed;
+            bottom: 80px;
+            left: 14px;
+            z-index: 600;
+            width: 44px;
+            height: 44px;
+            background: var(--cyan-dim);
+            border: 1px solid var(--cyan);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: var(--cyan-glow);
+            transition: all 0.2s;
+            font-size: 1.2rem;
+        }
+
+        #chat-bubble:hover {
+            transform: scale(1.1);
+            background: rgba(0, 245, 255, 0.25);
+        }
+
+        #chat-panel {
+            position: fixed;
+            bottom: 134px;
+            left: 14px;
+            width: 300px;
+            z-index: 600;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-bright);
+            box-shadow: var(--cyan-glow), 0 20px 60px rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            max-height: 420px;
+        }
+
+        #chat-panel.open {
+            display: flex;
+        }
+
+        #chat-header {
+            font-family: var(--font-head);
+            font-size: 0.6rem;
+            letter-spacing: 0.12em;
+            color: var(--cyan);
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #chat-close {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        #chat-close:hover {
+            color: var(--red);
+        }
+
+        #chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 200px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 245, 255, 0.2) transparent;
+        }
+
+        .chat-msg {
+            font-size: 0.65rem;
+            line-height: 1.5;
+            padding: 7px 10px;
+            max-width: 90%;
+        }
+
+        .chat-msg.user {
+            background: var(--cyan-dim);
+            border: 1px solid rgba(0, 245, 255, 0.25);
+            color: var(--cyan);
+            align-self: flex-end;
+            font-family: var(--font-mono);
+        }
+
+        .chat-msg.ai {
+            background: rgba(26, 111, 255, 0.12);
+            border: 1px solid rgba(26, 111, 255, 0.3);
+            color: var(--text-main);
+            align-self: flex-start;
+        }
+
+        .chat-msg.thinking {
+            color: var(--text-dim);
+            font-family: var(--font-mono);
+            font-size: 0.58rem;
+            align-self: flex-start;
+            background: rgba(0, 245, 255, 0.04);
+            border: 1px solid var(--border);
+        }
+
+        #chat-input-row {
+            display: flex;
+            gap: 6px;
+            padding: 8px;
+            border-top: 1px solid var(--border);
+        }
+
+        #chat-input {
+            flex: 1;
+            background: rgba(0, 245, 255, 0.05);
+            border: 1px solid var(--border);
+            color: var(--cyan);
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            padding: 5px 8px;
+            outline: none;
+        }
+
+        #chat-input::placeholder {
+            color: rgba(0, 245, 255, 0.25);
+        }
+
+        #chat-send {
+            font-family: var(--font-head);
+            font-size: 0.48rem;
+            padding: 5px 10px;
+            border: 1px solid var(--cyan);
+            background: var(--cyan-dim);
+            color: var(--cyan);
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        #chat-send:hover {
+            background: rgba(0, 245, 255, 0.25);
+        }
+
+        /* ALERT HISTORY */
+        #alert-history-panel {
+            position: fixed;
+            top: 62px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(500px, 70vw);
+            z-index: 700;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-bright);
+            box-shadow: var(--cyan-glow), 0 20px 60px rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            max-height: 400px;
+        }
+
+        #alert-history-panel.open {
+            display: flex;
+        }
+
+        #ah-header {
+            font-family: var(--font-head);
+            font-size: 0.6rem;
+            letter-spacing: 0.12em;
+            color: var(--red);
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(255, 46, 46, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #ah-close {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        #alert-history-list {
+            overflow-y: auto;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            scrollbar-width: thin;
+        }
+
+        .ah-item {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            padding: 6px 10px;
+            border-left: 2px solid var(--red);
+            background: rgba(255, 46, 46, 0.05);
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .ah-time {
+            color: var(--text-dim);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .ah-text {
+            color: #ff9999;
+            line-height: 1.4;
+        }
+
+        /* CHARTS OVERLAY */
+        #charts-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1500;
+            background: rgba(0, 3, 12, 0.92);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #charts-overlay.open {
+            display: flex;
+        }
+
+        #charts-box {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-bright);
+            width: min(820px, 92vw);
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: var(--cyan-glow), 0 30px 80px rgba(0, 0, 0, 0.9);
+            padding: 20px;
+        }
+
+        #charts-header {
+            font-family: var(--font-head);
+            font-size: 0.7rem;
+            letter-spacing: 0.15em;
+            color: var(--cyan);
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #charts-close {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        #charts-close:hover {
+            color: var(--red);
+        }
+
+        .chart-period-btns {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        .cperiod {
+            font-family: var(--font-head);
+            font-size: 0.5rem;
+            padding: 4px 10px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-dim);
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .cperiod.active {
+            border-color: var(--cyan);
+            color: var(--cyan);
+            background: var(--cyan-dim);
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .chart-card {
+            background: rgba(0, 245, 255, 0.03);
+            border: 1px solid var(--border);
+            padding: 12px;
+        }
+
+        .chart-card-title {
+            font-family: var(--font-head);
+            font-size: 0.55rem;
+            color: var(--cyan);
+            letter-spacing: 0.1em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        /* FULLSCREEN */
+        body.fullscreen #left-panel,
+        body.fullscreen #right-panel,
+        body.fullscreen #alert-ticker,
+        body.fullscreen #bottom-legend,
+        body.fullscreen #map-style-switcher,
+        body.fullscreen #chat-bubble,
+        body.fullscreen #alert-history-panel {
+            display: none !important;
+        }
+
+        body.fullscreen .tab-bar,
+        body.fullscreen .topbar-right {
+            opacity: 0.3;
+        }
+
+        body.fullscreen .tab-bar:hover,
+        body.fullscreen .topbar-right:hover {
+            opacity: 1;
+        }
+
+        /* KEYBOARD SHORTCUTS HELP */
+        #kbd-help {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 800;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-bright);
+            padding: 14px 20px;
+            display: none;
+            gap: 20px;
+            flex-wrap: wrap;
+            max-width: 500px;
+            box-shadow: var(--cyan-glow);
+        }
+
+        #kbd-help.open {
+            display: flex;
+        }
+
+        .kbd-item {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .kbd-key {
+            background: rgba(0, 245, 255, 0.1);
+            border: 1px solid var(--border-bright);
+            color: var(--cyan);
+            padding: 2px 7px;
+            font-size: 0.65rem;
+            font-family: var(--font-head);
+        }
+
+        /* ANOMALY BADGE */
+        .anomaly-badge {
+            font-family: var(--font-head);
+            font-size: 0.45rem;
+            padding: 1px 5px;
+            background: rgba(255, 46, 46, 0.15);
+            border: 1px solid var(--red);
+            color: var(--red);
+            margin-left: 6px;
+            letter-spacing: 0.05em;
+            animation: blinkRed 1.5s infinite;
+        }
+
+        /* MOBILE */
+        @media(max-width:768px) {
+
+            #left-panel,
+            #right-panel {
+                display: none;
+            }
+
+            #mobile-drawer {
+                display: flex !important;
+            }
+
+            .brand {
+                font-size: 0.7rem;
+            }
+
+            .tab-bar {
+                gap: 2px;
+            }
+
+            .tab {
+                padding: 4px 7px;
+                font-size: 0.42rem;
+            }
+
+            .tb-btn {
+                padding: 3px 7px;
+                font-size: 0.42rem;
+            }
+
+            #map-style-switcher {
+                bottom: 160px;
+            }
+        }
+
+        #mobile-drawer {
+            display: none;
+            position: fixed;
+            bottom: 68px;
+            left: 0;
+            right: 0;
+            z-index: 600;
+            background: var(--bg-panel);
+            border-top: 1px solid var(--border-bright);
+            padding: 10px;
+            gap: 8px;
+            flex-direction: row;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        #mobile-drawer .panel-card {
+            min-width: 200px;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="corner corner-tl"></div>
+    <div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div>
+    <div class="corner corner-br"></div>
+
+    <!-- LOADING -->
+    <div id="loading">
+        <div class="load-title">⬡ AI WATER CRISIS</div>
+        <div class="load-sub">PREDICTION SYSTEM v3.0</div>
+        <div class="load-bar-wrap">
+            <div class="load-bar-fill" id="loader-bar"></div>
+        </div>
+        <div class="load-status" id="loader-status">INITIALIZING SENSORS...</div>
+    </div>
+
+    <!-- TOPBAR -->
+    <div id="topbar">
+        <div class="brand">⬡ AI WATER CRISIS MAP</div>
+        <div class="tab-bar">
+            <div class="tab active" data-tab="flood">Flood Risk</div>
+            <div class="tab" data-tab="stress">Water Stress</div>
+            <div class="tab" data-tab="pollution">Pollution Alert</div>
+            <div class="tab" data-tab="drought">Drought Forecast</div>
+        </div>
+        <div class="topbar-right">
+            <button class="tb-btn" id="search-btn">🔍 Search</button>
+            <button class="tb-btn" id="charts-btn">📊 Charts</button>
+            <button class="tb-btn" id="alert-hist-btn">🔔 Alerts</button>
+            <button class="tb-btn" id="fullscreen-btn">⛶ Full</button>
+            <button class="tb-btn" id="theme-btn">☀ Light</button>
+            <button class="tb-btn" id="kbd-btn">⌨ Keys</button>
+            <div id="refresh-countdown" title="Click to refresh now">↺ --s</div>
+            <div class="topbar-meta">
+                <div><span class="live-dot"></span>LIVE</div>
+                <div id="clock" style="color:rgba(0,245,255,0.4)">--:--:--</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="map"></div>
+    <div id="left-panel"></div>
+    <div id="right-panel"></div>
+    <div id="mobile-drawer"></div>
+
+    <div id="alert-ticker">
+        <div class="ticker-label">⚠ ALERT</div>
+        <div class="ticker-content" id="ticker-text">Initializing AI water monitoring system...</div>
+    </div>
+
+    <div id="bottom-legend">
+        <div class="leg-item">
+            <div class="leg-line" style="background:#00bfff"></div>Rivers
+        </div>
+        <div class="leg-item">
+            <div class="leg-line" style="background:#cc77ff"></div>Canals
+        </div>
+        <div class="leg-item">
+            <div class="leg-dot" style="background:rgba(0,220,255,0.45);border-color:#00dcff"></div>Lakes
+        </div>
+        <div class="leg-item">
+            <div class="leg-dot" style="background:rgba(26,79,255,0.45);border-color:#1a6fff"></div>Reservoirs
+        </div>
+        <div class="leg-item">
+            <div class="leg-dot" style="background:var(--red);border-color:var(--red)"></div>Dams
+        </div>
+        <div class="leg-item">
+            <div class="leg-dot" style="background:var(--orange);border-color:var(--orange)"></div>Pumps
+        </div>
+    </div>
+
+    <!-- MAP STYLE SWITCHER -->
+    <div id="map-style-switcher">
+        <div
+            style="font-family:var(--font-head);font-size:0.42rem;color:var(--text-dim);letter-spacing:0.12em;text-align:center;margin-bottom:2px;">
+            MAP STYLE</div>
+        <button class="map-style-btn active" data-style="dark">🌑 Dark</button>
+        <button class="map-style-btn" data-style="normal">🗺 Normal</button>
+        <button class="map-style-btn" data-style="satellite">🛰 Satellite</button>
+        <button class="map-style-btn" data-style="terrain">🏔 Terrain</button>
+        <button id="layer-toggle-btn" class="layers-on">💧 Layers ON</button>
+        <button id="heatmap-toggle-btn">🔥 Heatmap OFF</button>
+    </div>
+
+    <!-- AI CHAT -->
+    <div id="chat-bubble" title="AI Assistant (Press A)">💬</div>
+    <div id="chat-panel">
+        <div id="chat-header">
+            <span>⬡ AI WATER ASSISTANT</span>
+            <button id="chat-close">✕</button>
+        </div>
+        <div id="chat-messages">
+            <div class="chat-msg ai">Hello! I can answer questions about water conditions in West Bengal. Try asking:
+                "Which district has highest flood risk?" or "What is the current drought situation?"</div>
+        </div>
+        <div id="chat-input-row">
+            <input type="text" id="chat-input" placeholder="Ask about water conditions..." />
+            <button id="chat-send">Send</button>
+        </div>
+    </div>
+
+    <!-- ALERT HISTORY -->
+    <div id="alert-history-panel">
+        <div id="ah-header">
+            <span>⚠ ALERT HISTORY — LAST 24H</span>
+            <button id="ah-close">✕</button>
+        </div>
+        <div id="alert-history-list"></div>
+    </div>
+
+    <!-- CHARTS OVERLAY -->
+    <div id="charts-overlay">
+        <div id="charts-box">
+            <div id="charts-header">
+                <span>📊 HISTORICAL WATER DATA — WEST BENGAL</span>
+                <button id="charts-close">✕</button>
+            </div>
+            <div class="chart-period-btns">
+                <button class="cperiod active" data-days="30">30 Days</button>
+                <button class="cperiod" data-days="60">60 Days</button>
+                <button class="cperiod" data-days="90">90 Days</button>
+            </div>
+            <div class="chart-grid">
+                <div class="chart-card">
+                    <div class="chart-card-title">🌧 Rainfall (mm)</div><canvas id="chart-rain"></canvas>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-card-title">🌊 River Discharge (m³/s)</div><canvas id="chart-discharge"></canvas>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-card-title">💧 Reservoir Level (%)</div><canvas id="chart-reservoir"></canvas>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-card-title">☀ Drought Index</div><canvas id="chart-drought"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KEYBOARD SHORTCUTS -->
+    <div id="kbd-help">
+        <div
+            style="font-family:var(--font-head);font-size:0.6rem;color:var(--cyan);width:100%;margin-bottom:8px;letter-spacing:0.1em;">
+            KEYBOARD SHORTCUTS</div>
+        <div class="kbd-item"><span class="kbd-key">1</span> Flood Risk</div>
+        <div class="kbd-item"><span class="kbd-key">2</span> Water Stress</div>
+        <div class="kbd-item"><span class="kbd-key">3</span> Pollution</div>
+        <div class="kbd-item"><span class="kbd-key">4</span> Drought</div>
+        <div class="kbd-item"><span class="kbd-key">F</span> Fullscreen</div>
+        <div class="kbd-item"><span class="kbd-key">L</span> Toggle Layers</div>
+        <div class="kbd-item"><span class="kbd-key">H</span> Heatmap</div>
+        <div class="kbd-item"><span class="kbd-key">A</span> AI Chat</div>
+        <div class="kbd-item"><span class="kbd-key">C</span> Charts</div>
+        <div class="kbd-item"><span class="kbd-key">R</span> Refresh</div>
+        <div class="kbd-item"><span class="kbd-key">T</span> Theme</div>
+        <div class="kbd-item"><span class="kbd-key">ESC</span> Close All</div>
+    </div>
+
+    <!-- SEARCH OVERLAY -->
+    <div id="search-overlay">
+        <div class="search-box">
+            <div class="search-header">
+                <svg width="14" height="14" viewBox="0 0 12 12" fill="none" style="flex-shrink:0;color:var(--cyan)">
+                    <circle cx="5" cy="5" r="3.5" stroke="currentColor" stroke-width="1.5" />
+                    <line x1="8" y1="8" x2="11" y2="11" stroke="currentColor" stroke-width="1.5"
+                        stroke-linecap="round" />
+                </svg>
+                <input type="text" class="search-input" id="search-input"
+                    placeholder="Type district, city or area in West Bengal..." />
+                <button id="search-go">Analyze</button>
+                <button id="search-close">✕</button>
+            </div>
+            <div id="search-result">
+                <div class="search-hint">🔍 Enter any location to get AI-powered water risk analysis<br><span
+                        style="opacity:0.5;font-size:0.55rem">e.g. Kolkata, Bankura, Darjeeling, Purulia</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ═══════════════════════════════════════════════════════
+        // STEP 1 — UTILITIES
+        // ═══════════════════════════════════════════════════════
+        function gid(id) { return document.getElementById(id); }
+
+        function riskClass(v) {
+            if (!v) return '';
+            var u = v.toString().toUpperCase();
+            if (u === 'HIGH') return 'risk-high';
+            if (u === 'MODERATE') return 'risk-moderate';
+            return 'risk-low';
+        }
+
+        function setBar(id, pct) {
+            var el = gid(id);
+            if (el) setTimeout(function () { el.style.width = (pct || 0) + '%'; }, 100);
+        }
+
+        function updateTicker(alerts) {
+            if (!alerts || !alerts.length) return;
+            gid('ticker-text').innerHTML = alerts.join(' &nbsp;|&nbsp; ') + ' &nbsp;|&nbsp; AI ANALYSIS COMPLETE ✓';
+            alerts.forEach(function (a) { addAlertHistory(a); });
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // STEP 2 — LOADING
+        // ═══════════════════════════════════════════════════════
+        var loaderBar = gid('loader-bar');
+        var loaderStatus = gid('loader-status');
+        var loadingEl = gid('loading');
+        var loadDone = false;
+        var loadSteps = ['INITIALIZING SENSORS...', 'LOADING GIS DATA...', 'CALIBRATING RISK MODEL...', 'FETCHING LIVE WEATHER...', 'RENDERING MAP LAYERS...'];
+        var loadIdx = 0;
+        var loadTick = setInterval(function () { loadIdx++; if (loadIdx < loadSteps.length) { loaderStatus.textContent = loadSteps[loadIdx]; loaderBar.style.width = Math.round(loadIdx / loadSteps.length * 80) + '%'; } }, 500);
+
+        function dismissLoader(msg) {
+            if (loadDone) return;
+            loadDone = true;
+            clearInterval(loadTick);
+            loaderBar.style.width = '100%';
+            loaderStatus.textContent = msg || 'SYSTEM READY';
+            setTimeout(function () { loadingEl.classList.add('done'); }, 900);
+        }
+        setTimeout(function () { dismissLoader('DEMO MODE — SYSTEM READY'); }, 5000);
+
+        // ═══════════════════════════════════════════════════════
+        // STEP 3 — CLOCK
+        // ═══════════════════════════════════════════════════════
+        function updateClock() {
+            var now = new Date();
+            var ist = new Date(now.getTime() + now.getTimezoneOffset() * 60000 + 19800000);
+            gid('clock').textContent = ist.toTimeString().slice(0, 8) + ' IST';
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        // ═══════════════════════════════════════════════════════
+        // STEP 4 — MAP
+        // ═══════════════════════════════════════════════════════
+        var map = L.map('map', { center: [22.9, 88.3], zoom: 8 });
+
+        var tileLayers = {
+            dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© OSM © CARTO', subdomains: 'abcd', maxZoom: 19 }),
+            normal: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', subdomains: 'abc', maxZoom: 19 }),
+            satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri', maxZoom: 19 }),
+            terrain: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { attribution: '© OpenTopoMap', subdomains: 'abc', maxZoom: 17 })
+        };
+        var currentTileLayer = tileLayers.dark;
+        currentTileLayer.addTo(map);
+
+        var riverLayer = L.featureGroup(), canalLayer = L.featureGroup(), lakeLayer = L.featureGroup(),
+            reservoirLayer = L.featureGroup(), damLayer = L.featureGroup(), pumpLayer = L.featureGroup(),
+            searchLayer = L.featureGroup().addTo(map), heatLayer = null;
+
+        var allWaterLayers = [];
+        var waterLayersVisible = true;
+        var heatmapVisible = false;
+
+        var damIcon = L.divIcon({ html: '<div style="width:14px;height:14px;background:rgba(255,46,46,0.9);border:1.5px solid #ff2e2e;box-shadow:0 0 8px #ff2e2e;clip-path:polygon(50% 0%,100% 100%,0% 100%)"></div>', className: '', iconSize: [14, 14], iconAnchor: [7, 7] });
+        var pumpIcon = L.divIcon({ html: '<div style="width:12px;height:12px;background:rgba(255,140,0,0.9);border:1.5px solid #ff8c00;box-shadow:0 0 8px #ff8c00;border-radius:50%"></div>', className: '', iconSize: [12, 12], iconAnchor: [6, 6] });
+
+        var counts = { river: 0, canal: 0, lake: 0, reservoir: 0, dam: 0, pump: 0 };
+        var isFlask = (window.location.protocol === 'http:' || window.location.protocol === 'https:') && window.location.hostname !== '';
+        var geojsonPath = isFlask ? '/static/wb.geojson' : 'wb.geojson';
+
+        // Map click: show nearest infrastructure
+        map.on('click', function (e) {
+            if (!allWaterLayers.length) return;
+            var lat = e.latlng.lat, lng = e.latlng.lng;
+            showNearbyInfo(lat, lng);
+        });
+
+        fetch(geojsonPath)
+            .then(function (r) { if (!r.ok) throw new Error('not found'); return r.json(); })
+            .then(function (geoData) {
+                geoData.features.forEach(function (feat) {
+                    var p = feat.properties || {}, g = feat.geometry ? feat.geometry.type : null, name = p.name || 'Unknown';
+                    if (p.waterway === 'river') { counts.river++; L.geoJSON(feat, { style: { color: '#00bfff', weight: (g === 'LineString' || g === 'MultiLineString') ? 2.5 : 1, opacity: 0.9, fillColor: '#00bfff', fillOpacity: 0.12 } }).bindTooltip('🌊 River: ' + name, { sticky: true }).addTo(riverLayer); }
+                    else if (p.waterway === 'canal') { counts.canal++; L.geoJSON(feat, { style: { color: '#cc77ff', weight: 2, opacity: 0.85, dashArray: '5,3' } }).bindTooltip('💧 Canal: ' + name, { sticky: true }).addTo(canalLayer); }
+                    else if (p.natural === 'water' && p.water !== 'reservoir') { counts.lake++; L.geoJSON(feat, { style: { color: '#00dcff', weight: 1.5, fillColor: '#00dcff', fillOpacity: 0.32, opacity: 0.8 } }).bindTooltip('🏞 Lake: ' + name, { sticky: true }).addTo(lakeLayer); }
+                    else if (p.water === 'reservoir' || p.landuse === 'reservoir') { counts.reservoir++; L.geoJSON(feat, { style: { color: '#1a6fff', weight: 2, fillColor: '#1a4fff', fillOpacity: 0.42, opacity: 0.9 } }).bindTooltip('🔷 Reservoir: ' + name, { sticky: true }).addTo(reservoirLayer); }
+                    else if (p.waterway === 'dam' || p.man_made === 'dam') { counts.dam++; if (g === 'Point') { var c = feat.geometry.coordinates; L.marker([c[1], c[0]], { icon: damIcon }).bindPopup('<b style="color:#ff2e2e">⬛ DAM</b><br>' + name).addTo(damLayer); } else { L.geoJSON(feat, { style: { color: '#ff2e2e', weight: 3, opacity: 0.9 } }).bindTooltip('⬛ Dam: ' + name, { sticky: true }).addTo(damLayer); } }
+                    else if (p.man_made === 'pumping_station') { counts.pump++; if (g === 'Point') { var c2 = feat.geometry.coordinates; L.marker([c2[1], c2[0]], { icon: pumpIcon }).bindPopup('<b style="color:#ff8c00">⚙ PUMP</b><br>' + name).addTo(pumpLayer); } }
+                });
+                [riverLayer, canalLayer, lakeLayer, reservoirLayer, damLayer, pumpLayer].forEach(function (l) { l.addTo(map); });
+                allWaterLayers = [riverLayer, canalLayer, lakeLayer, reservoirLayer, damLayer, pumpLayer];
+                L.control.layers(null, { '<span style="color:#00bfff;font-size:11px">🌊 Rivers</span>': riverLayer, '<span style="color:#cc77ff;font-size:11px">〰 Canals</span>': canalLayer, '<span style="color:#00dcff;font-size:11px">🏞 Lakes</span>': lakeLayer, '<span style="color:#1a6fff;font-size:11px">🔷 Reservoirs</span>': reservoirLayer, '<span style="color:#ff2e2e;font-size:11px">⬛ Dams</span>': damLayer, '<span style="color:#ff8c00;font-size:11px">⚙ Pumps</span>': pumpLayer }, { position: 'bottomright' }).addTo(map);
+                updateCountDisplays();
+                buildHeatmap();
+                dismissLoader(Object.values(counts).reduce(function (a, b) { return a + b; }, 0) + ' FEATURES LOADED');
+            })
+            .catch(function (err) {
+                console.warn('GeoJSON:', err.message);
+                var demos = [{ lat: 23.5, lng: 87.3, l: '🌊 Damodar', c: '#00bfff' }, { lat: 22.7, lng: 88.4, l: '🌊 Hooghly', c: '#00bfff' }, { lat: 23.9, lng: 86.8, l: '🔷 Panchet', c: '#1a6fff' }, { lat: 23.7, lng: 86.9, l: '⬛ Maithon', c: '#ff2e2e' }, { lat: 22.5, lng: 88.3, l: '🏞 Rabindra Sarobar', c: '#00dcff' }, { lat: 23.2, lng: 87.1, l: '⚙ Durgapur PS', c: '#ff8c00' }];
+                demos.forEach(function (p) { L.circleMarker([p.lat, p.lng], { radius: 7, color: p.c, fillColor: p.c, fillOpacity: 0.5, weight: 2 }).bindTooltip(p.l, { sticky: true }).addTo(map); });
+                counts = { river: 2, canal: 0, lake: 1, reservoir: 1, dam: 1, pump: 1 };
+                allWaterLayers = [riverLayer, canalLayer, lakeLayer, reservoirLayer, damLayer, pumpLayer];
+                updateCountDisplays();
+                buildHeatmap();
+                dismissLoader('DEMO MODE — ADD wb.geojson TO /static/');
+            });
+
+        function updateCountDisplays() {
+            var ids = { river: 'cnt-river', canal: 'cnt-canal', lake: 'cnt-lake', reservoir: 'cnt-res', dam: 'cnt-dam', pump: 'cnt-pump' };
+            Object.keys(ids).forEach(function (k) { var el = gid(ids[k]); if (el) el.textContent = counts[k] || '0'; });
+        }
+
+        // ── Heatmap ──
+        function buildHeatmap() {
+            // West Bengal flood risk zones (lat, lng, intensity)
+            var heatData = [
+                [22.57, 88.36, 0.9], [22.9, 88.3, 0.7], [23.5, 87.3, 0.8], [23.7, 86.9, 0.9],
+                [23.9, 86.8, 0.6], [22.5, 88.3, 0.5], [26.7, 88.4, 0.7], [27.0, 88.3, 0.6],
+                [23.2, 87.1, 0.8], [24.1, 88.3, 0.5], [25.0, 88.1, 0.4], [23.4, 88.6, 0.6],
+                [22.1, 88.5, 0.7], [22.4, 87.3, 0.5], [23.0, 87.9, 0.8], [22.7, 88.1, 0.9],
+                [24.5, 88.0, 0.5], [23.8, 87.5, 0.7], [22.3, 88.2, 0.8], [23.3, 86.4, 0.6]
+            ];
+            if (typeof L.heatLayer !== 'undefined') {
+                heatLayer = L.heatLayer(heatData, { radius: 35, blur: 25, maxZoom: 12, gradient: { 0.3: '#00ff88', 0.6: '#ffaa00', 0.8: '#ff5500', 1.0: '#ff0000' } });
+            }
+        }
+
+        function toggleHeatmap() {
+            if (!heatLayer) return;
+            heatmapVisible = !heatmapVisible;
+            var btn = gid('heatmap-toggle-btn');
+            if (heatmapVisible) {
+                heatLayer.addTo(map);
+                btn.textContent = '🔥 Heatmap ON';
+                btn.className = 'hm-on';
+            } else {
+                map.removeLayer(heatLayer);
+                btn.textContent = '🔥 Heatmap OFF';
+                btn.className = '';
+            }
+        }
+
+        // ── Nearby infrastructure on map click ──
+        function showNearbyInfo(lat, lng) {
+            var clickPt = L.latLng(lat, lng);
+            var nearest = [];
+            var layerNames = ['Dam', 'Pump Station'];
+            [damLayer, pumpLayer].forEach(function (layer, li) {
+                layer.eachLayer(function (l) {
+                    var latlng = l.getLatLng ? l.getLatLng() : null;
+                    if (latlng) {
+                        var dist = clickPt.distanceTo(latlng);
+                        if (dist < 50000) nearest.push({ name: l.options.title || layerNames[li], dist: Math.round(dist / 1000 * 10) / 10, latlng: latlng });
+                    }
+                });
+            });
+            nearest.sort(function (a, b) { return a.dist - b.dist; });
+            if (nearest.length === 0) return;
+            var html = '<div style="font-family:var(--font-head);font-size:0.65rem;color:var(--cyan);margin-bottom:6px">NEARBY INFRASTRUCTURE</div>';
+            nearest.slice(0, 4).forEach(function (n) {
+                html += '<div style="font-size:0.62rem;color:var(--text-main);padding:2px 0">' + n.name + ' — <span style="color:var(--orange)">' + n.dist + ' km</span></div>';
+            });
+            L.popup().setLatLng([lat, lng]).setContent(html).openOn(map);
+        }
+
+        // ── Map style switching ──
+        document.querySelectorAll('.map-style-btn[data-style]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var style = btn.getAttribute('data-style');
+                map.removeLayer(currentTileLayer);
+                currentTileLayer = tileLayers[style];
+                currentTileLayer.addTo(map);
+                allWaterLayers.forEach(function (l) { if (map.hasLayer(l)) l.bringToFront(); });
+                document.querySelectorAll('.map-style-btn[data-style]').forEach(function (b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+            });
+        });
+
+        gid('layer-toggle-btn').addEventListener('click', function () {
+            waterLayersVisible = !waterLayersVisible;
+            allWaterLayers.forEach(function (l) { waterLayersVisible ? map.addLayer(l) : map.removeLayer(l); });
+            this.textContent = waterLayersVisible ? '💧 Layers ON' : '🚫 Layers OFF';
+            this.className = waterLayersVisible ? 'layers-on' : 'layers-off';
+        });
+
+        gid('heatmap-toggle-btn').addEventListener('click', toggleHeatmap);
+
+        // ═══════════════════════════════════════════════════════
+        // STEP 5 — DEMO DATA
+        // ═══════════════════════════════════════════════════════
+        function getDemoData(tab) {
+            var demos = {
+                flood: { location_info: { temp: '33C', rainfall: '12 mm', discharge: '450 m3/s', groundwater: '-8.5 m', humidity: '78%' }, risks: { flood: 'HIGH', stress: 'MODERATE', pollution: 'LOW', drought: 'MODERATE' }, reservoir: { capacity_pct: 52, trend: '+2.1% this week', status: 'Below Normal' }, drought_monitor: { risk_pct: 72, soil_moisture: 'LOW', evapo: '4.2 mm/day', deficit: '-82 mm' }, water_quality: { ph: '7.2', turbidity: '12 NTU', do: '6.8 mg/L', conductivity: '342 uS/cm' }, alerts: ['FLOOD WARNING: Hooghly River discharge exceeds 450 m3/s', 'GROUNDWATER DEPLETION at -8.5m below seasonal norm', 'RESERVOIR at 52% capacity — monitoring required'] },
+                stress: { overall_stress_index: 67, stress_level: 'MODERATE', demand_vs_supply: { demand_mcm: 1240, supply_mcm: 980, deficit_pct: 21 }, sector_stress: { agricultural: 'HIGH', industrial: 'MODERATE', domestic: 'LOW', environmental_flow: 'MODERATE' }, groundwater_depletion_rate: '0.8 m/year', surface_water_availability: 'Below Average', inter_basin_transfer: 'Active', irrigation_efficiency: '62%', per_capita_availability: '1420 m3/year', stress_forecast_30d: [55, 58, 62, 67, 71, 74, 70, 68], hotspot_districts: ['Bardhaman', 'Bankura', 'Purulia', 'Birbhum'], recommendations: ['Implement micro-irrigation in high-stress districts', 'Increase groundwater recharge infrastructure', 'Improve irrigation canal efficiency'], alerts: ['Water stress rising in Purulia', 'Agricultural demand exceeds supply by 21%'] },
+                pollution: { overall_pollution_index: 42, alert_level: 'MODERATE', pollutants: { arsenic_ppb: 18, fluoride_mg_l: 0.8, iron_mg_l: 1.2, nitrate_mg_l: 22, coliform_cfu_ml: 45, heavy_metals: 'LOW' }, river_quality: { hooghly: 'MODERATE', damodar: 'HIGH', teesta: 'LOW', rupnarayan: 'MODERATE' }, industrial_discharge_zones: ['Durgapur', 'Haldia', 'Howrah'], safe_drinking_water_pct: 74, wqi_score: 58, trend: 'Improving', critical_contaminant: 'Arsenic in groundwater', affected_population: '2.4 million', treatment_plants_operational: 18, treatment_plants_total: 24, alerts: ['Arsenic elevated in Damodar basin', 'Industrial discharge active in Haldia'] },
+                drought: { current_drought_index: 0.72, spi_3month: -1.4, spi_6month: -0.9, pdsi: -2.1, drought_category: 'Moderate Drought', affected_area_pct: 38, crop_water_stress: 'HIGH', pasture_condition: 'Poor', snowpack_anomaly: 'N/A', streamflow_percentile: 22, soil_moisture_anomaly: '-18%', forecast_90d: { outlook: 'Drought likely to persist through Q3', probability_improvement: 28, expected_rainfall_mm: 145, temperature_anomaly: '+1.8C' }, affected_districts: ['Bankura', 'Purulia', 'Birbhum', 'Murshidabad'], crop_loss_estimate: '15-25%', water_table_depth: '-9.2 m', livestock_impact: 'MODERATE', alerts: ['Drought index critical in western districts', 'Crop water stress advisory issued'] }
+            };
+            return demos[tab] || demos.flood;
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // STEP 6 — ANOMALY DETECTION
+        // ═══════════════════════════════════════════════════════
+        // Historical seasonal norms for West Bengal
+        var NORMS = { temp: { min: 22, max: 36 }, rainfall: { min: 0, max: 80 }, humidity: { min: 55, max: 90 }, reservoir: { min: 40, max: 85 }, drought_pct: { min: 20, max: 60 } };
+        var lastValues = {};
+
+        function checkAnomaly(key, value) {
+            var norm = NORMS[key];
+            if (!norm) return false;
+            var v = parseFloat(value);
+            if (isNaN(v)) return false;
+            var prev = lastValues[key];
+            lastValues[key] = v;
+            // Outside seasonal range = anomaly
+            if (v < norm.min || v > norm.max) return true;
+            // Sudden large change from last reading = anomaly
+            if (prev !== undefined && Math.abs(v - prev) > (norm.max - norm.min) * 0.4) return true;
+            return false;
+        }
+
+        function anomalyBadge() { return '<span class="anomaly-badge">⚠ ANOMALY</span>'; }
+
+        // ═══════════════════════════════════════════════════════
+        // STEP 7 — PANEL RENDERERS
+        // ═══════════════════════════════════════════════════════
+        function renderFloodTab(d) {
+            var loc = d.location_info || {}, risks = d.risks || {}, res = d.reservoir || {}, dr = d.drought_monitor || {}, wq = d.water_quality || {};
+            var resCap = parseInt(res.capacity_pct) || 52, drPct = parseInt(dr.risk_pct) || 65;
+            var resCls = resCap < 40 ? 'danger' : resCap < 65 ? 'warn' : '', drCls = drPct > 70 ? 'danger' : drPct > 45 ? 'warn' : '';
+            var floodCls = risks.flood === 'HIGH' ? 'danger' : risks.flood === 'MODERATE' ? 'warn' : 'ok';
+            var tempAnom = checkAnomaly('temp', parseFloat(loc.temp)) ? anomalyBadge() : '';
+            var rainAnom = checkAnomaly('rainfall', parseFloat(loc.rainfall)) ? anomalyBadge() : '';
+            var resAnom = checkAnomaly('reservoir', resCap) ? anomalyBadge() : '';
+            var drAnom = checkAnomaly('drought_pct', drPct) ? anomalyBadge() : '';
+
+            gid('left-panel').innerHTML =
+                '<div class="panel-card"><div class="card-title">📡 Location Info</div>' +
+                '<div class="info-row"><div class="info-label">📍 Region</div><div class="info-value" style="color:var(--cyan)">' + currentLocation.split(',')[0] + '</div></div>' +
+                '<div class="info-row"><div class="info-label">🌡 Temperature</div><div class="info-value">' + (loc.temp || '--') + tempAnom + '</div></div>' +
+                '<div class="info-row"><div class="info-label">🌧 Rainfall</div><div class="info-value">' + (loc.rainfall || '--') + rainAnom + '</div></div>' +
+                '<div class="info-row"><div class="info-label">🌊 River Discharge</div><div class="info-value">' + (loc.discharge || '--') + '</div></div>' +
+                '<div class="info-row"><div class="info-label">💧 Groundwater</div><div class="info-value" style="color:var(--orange)">' + (loc.groundwater || '--') + '</div></div>' +
+                '<div class="info-row"><div class="info-label">🌫 Humidity</div><div class="info-value">' + (loc.humidity || '--') + '</div></div>' +
+                '</div>' +
+                '<div class="panel-card"><div class="card-title">⚠ Risk Assessment</div>' +
+                '<div class="risk-row"><div class="risk-label">⚠ Flood Risk</div><div class="risk-badge ' + riskClass(risks.flood) + '">' + (risks.flood || '--') + '</div></div>' +
+                '<div class="risk-row"><div class="risk-label">⚡ Water Stress</div><div class="risk-badge ' + riskClass(risks.stress) + '">' + (risks.stress || '--') + '</div></div>' +
+                '<div class="risk-row"><div class="risk-label">🧪 Pollution</div><div class="risk-badge ' + riskClass(risks.pollution) + '">' + (risks.pollution || '--') + '</div></div>' +
+                '<div class="risk-row"><div class="risk-label">☀ Drought</div><div class="risk-badge ' + riskClass(risks.drought) + '">' + (risks.drought || '--') + '</div></div>' +
+                '</div>' +
+                '<div class="panel-card"><div class="card-title">📊 Features Loaded</div>' +
+                '<div class="stats-grid">' +
+                '<div class="stat-box"><div class="stat-num" id="cnt-river">' + (counts.river || '—') + '</div><div class="stat-lbl">Rivers</div></div>' +
+                '<div class="stat-box"><div class="stat-num" id="cnt-canal">' + (counts.canal || '—') + '</div><div class="stat-lbl">Canals</div></div>' +
+                '<div class="stat-box"><div class="stat-num" id="cnt-lake">' + (counts.lake || '—') + '</div><div class="stat-lbl">Lakes</div></div>' +
+                '<div class="stat-box"><div class="stat-num" id="cnt-res">' + (counts.reservoir || '—') + '</div><div class="stat-lbl">Reservoirs</div></div>' +
+                '<div class="stat-box"><div class="stat-num" id="cnt-dam">' + (counts.dam || '—') + '</div><div class="stat-lbl">Dams</div></div>' +
+                '<div class="stat-box"><div class="stat-num" id="cnt-pump">' + (counts.pump || '—') + '</div><div class="stat-lbl">Pumps</div></div>' +
+                '</div></div>';
+
+            gid('right-panel').innerHTML =
+                '<div class="panel-card"><div class="card-title">💧 Reservoir Levels</div>' +
+                '<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:4px;">' +
+                '<div><div style="font-size:0.55rem;color:var(--text-dim);margin-bottom:2px;">Current Capacity</div><div class="big-num ' + resCls + '">' + resCap + '%' + resAnom + '</div></div>' +
+                '<div style="font-size:0.55rem;color:var(--text-dim);text-align:right;"><div>' + (res.trend || '--') + '</div><div style="color:var(--orange);margin-top:2px;">' + (res.status || '--') + '</div></div></div>' +
+                '<div class="prog-wrap"><div class="prog-fill ' + resCls + '" id="bar-res" style="width:0%"></div></div>' +
+                '<div class="bar-chart"><div class="bar" style="height:55%"></div><div class="bar" style="height:50%"></div><div class="bar" style="height:45%"></div><div class="bar" style="height:48%"></div><div class="bar" style="height:52%"></div><div class="bar" style="height:60%"></div><div class="bar" style="height:' + resCap + '%"></div><div class="bar" style="height:' + Math.min(resCap + 8, 95) + '%"></div></div>' +
+                '</div>' +
+                '<div class="panel-card"><div class="card-title">🌊 Flood Forecast</div>' +
+                '<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:5px;">' +
+                '<div><div style="font-size:0.55rem;color:var(--text-dim);margin-bottom:2px;">Risk Level</div><div class="big-num ' + floodCls + '">' + (risks.flood || '--') + '</div></div>' +
+                '<div style="text-align:right;"><div style="font-size:0.55rem;color:var(--text-dim);">Alert</div><div style="font-family:var(--font-head);font-size:0.5rem;color:var(--red);margin-top:2px;">' + (risks.flood === 'HIGH' ? '⚠ SEVERE' : risks.flood === 'MODERATE' ? '⚡ WATCH' : '✓ NORMAL') + '</div></div></div>' +
+                '<svg class="sparkline" viewBox="0 0 180 40"><defs><linearGradient id="sg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ff2e2e" stop-opacity="0.35"/><stop offset="100%" stop-color="#ff2e2e" stop-opacity="0"/></linearGradient></defs><path d="M0,35 L20,30 L40,28 L60,20 L80,15 L100,10 L120,8 L140,6 L160,4 L180,3" stroke="#ff2e2e" stroke-width="1.5" fill="none"/><path d="M0,35 L20,30 L40,28 L60,20 L80,15 L100,10 L120,8 L140,6 L160,4 L180,3 L180,40 L0,40Z" fill="url(#sg1)"/></svg>' +
+                '</div>' +
+                '<div class="panel-card"><div class="card-title">☀ Drought Monitor</div>' +
+                '<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:5px;">' +
+                '<div><div style="font-size:0.55rem;color:var(--text-dim);margin-bottom:2px;">Drought Risk Index</div><div class="big-num ' + drCls + '">' + drPct + '%' + drAnom + '</div></div>' +
+                '<div style="text-align:right;"><div style="font-size:0.55rem;color:var(--text-dim);">Soil Moisture</div><div style="font-family:var(--font-head);font-size:0.6rem;color:var(--orange);margin-top:2px;">' + (dr.soil_moisture || '--') + '</div></div></div>' +
+                '<div class="prog-wrap"><div class="prog-fill ' + drCls + '" id="bar-drought" style="width:0%"></div></div>' +
+                '<div style="font-family:var(--font-mono);font-size:0.57rem;color:var(--text-dim);margin-top:6px;"><div>Evapo: ' + (dr.evapo || '--') + '</div><div style="margin-top:2px;">Deficit: ' + (dr.deficit || '--') + '</div></div>' +
+                '</div>' +
+                '<div class="panel-card"><div class="card-title">✅ Water Quality</div>' +
+                '<div class="info-row"><div class="info-label">pH Level</div><div class="info-value" style="color:var(--green)">' + (wq.ph || '--') + '</div></div>' +
+                '<div class="info-row"><div class="info-label">Turbidity</div><div class="info-value" style="color:var(--orange)">' + (wq.turbidity || '--') + '</div></div>' +
+                '<div class="info-row"><div class="info-label">DO Level</div><div class="info-value" style="color:var(--green)">' + (wq.do || '--') + '</div></div>' +
+                '<div class="info-row"><div class="info-label">Conductivity</div><div class="info-value">' + (wq.conductivity || '--') + '</div></div>' +
+                '</div>';
+
+            setBar('bar-res', resCap); setBar('bar-drought', drPct);
+            updateMobileDrawer(d);
+        }
+
+        function renderStressTab(d) {
+            var si = parseInt(d.overall_stress_index) || 67, dv = d.demand_vs_supply || {}, sec = d.sector_stress || {}, hot = d.hotspot_districts || [], recs = d.recommendations || [], fc = d.stress_forecast_30d || [50, 55, 60, 67, 70, 68, 65, 62];
+            var siCls = si > 75 ? 'danger' : si > 50 ? 'warn' : 'ok', maxFc = Math.max.apply(null, fc.concat([1]));
+            gid('left-panel').innerHTML =
+                '<div class="panel-card"><div class="card-title" style="color:var(--orange)">⚡ Stress Overview</div>' +
+                '<div style="text-align:center;padding:8px 0;"><div style="font-size:0.55rem;color:var(--text-dim);margin-bottom:4px;">OVERALL STRESS INDEX</div><div class="big-num ' + siCls + '">' + si + '<span style="font-size:0.9rem">%</span></div><div class="risk-badge ' + riskClass(d.stress_level) + '" style="margin-top:6px;display:inline-block">' + (d.stress_level || '--') + '</div></div>' +
+                '<div class="prog-wrap"><div class="prog-fill ' + siCls + '" id="bar-stress" style="width:0%"></div></div></div>' +
+                '<div class="panel-card"><div class="card-title" style="color:var(--orange)">📊 Demand vs Supply</div>' +
+                '<div class="info-row"><div class="info-label">Demand</div><div class="info-value" style="color:var(--red)">' + (dv.demand_mcm || '--') + ' MCM</div></div>' +
+                '<div class="info-row"><div class="info-label">Supply</div><div class="info-value" style="color:var(--green)">' + (dv.supply_mcm || '--') + ' MCM</div></div>' +
+                '<div class="info-row"><div class="info-label">Deficit</div><div class="info-value" style="color:var(--orange)">' + (dv.deficit_pct || '--') + '%</div></div>' +
+                '<div class="info-row"><div class="info-label">Per Capita</div><div class="info-value">' + (d.per_capita_availability || '--') + '</div></div>' +
+                '</div>' +
+                '<div class="panel-card"><div class="card-title" style="color:var(--orange)">🏭 Sector Stress</div>' +
+                '<div class="risk-row"><div class="risk-label">🌾 Agricultural</div><div class="risk-badge ' + riskClass(sec.agricultural) + '">' + (sec.agricultural || '--') + '</div></div>' +
+                '<div class="risk-row"><div class="risk-label">🏭 Industrial</div><div class="risk-badge ' + riskClass(sec.industrial) + '">' + (sec.industrial || '--') + '</div></div>' +
+                '<div class="risk-row"><div class="risk-label">🏠 Domestic</div><div class="risk-badge ' + riskClass(sec.domestic) + '">' + (sec.domestic || '--') + '</div></div>' +
+                '<div class="risk-row"><div class="risk-label">🌿 Env. Flow</div><div class="risk-badge ' + riskClass(sec.environmental_flow) + '">' + (sec.environmental_flow || '--') + '</div></div>' +
+                '</div>';
+            var bh = fc.map(function (v) { return '<div class="bar" style="height:' + Math.round(v / maxFc * 95) + '%;background:linear-gradient(to top,#642,var(--orange))"></div>'; }).join('');
+            gid('right-panel').innerHTML =
+                '<div class="panel-card"><div class="card-title" style="color:var(--orange)">📈 30-Day Forecast</div><div class="bar-chart">' + bh + '</div></div>' +
+                '<div class="panel-card"><div class="card-title" style="color:var(--orange)">🌍 Hydro Indicators</div>' +
+                '<div class="info-row"><div class="info-label">GW Depletion</div><div class="info-value" style="color:var(--red)">' + (d.groundwater_depletion_rate || '--') + '</div></div>' +
+                '<div class="info-row"><div class="info-label">Surface Water</div><div class="info-value" style="color:var(--orange)">' + (d.surface_water_availability || '--') + '</div></div>' +
+                '<div class="info-row"><div class="info-label">Inter-basin Transfer</div><div class="info-value">' + (d.inter_basin_transfer || '--') + '</div></div>' +
+                '</div>' +
+                '<div class="panel-card"><div class="card-title" style="color:var(--orange)">📍 Hotspot Districts</div><div style="margin-top:4px;">' + hot.map(function (h) { return '<span style="display:inline-block;font-family:var(--font-mono);font-size:0.55rem;padding:2px 6px;margin:2px;border:1px solid rgba(255,140,0,0.4);color:var(--orange);background:rgba(255,140,0,0.07)">' + h + '</span>'; }).join('') + '</div></div>' +
+                '<div class="panel-card"><div class="card-title" style="color:var(--orange)">✅ Recommendations</div>' + recs.map(function (r) { return '<div class="rec-item" style="border-left-color:var(--orange)">' + r + '</div>'; }).join('') + '</div>';
+            setBar('bar-stress', si);
+        }
+
+        function renderPollutionTab(d) {
+            var pi = parseInt(d.overall_pollution_index) || 42, poll = d.pollutants || {}, rq = d.river_quality || {}, idz = d.industrial_discharge_zones || [];
+            var piCls = pi > 70 ? 'danger' : pi > 40 ? 'warn' : 'ok', tp = d.treatment_plants_total ? Math.round(d.treatment_plants_operational / d.treatment_plants_total * 100) : 75;
+            gid('left-panel').innerHTML =
+                '<div class="panel-card"><div class="card-title" style="color:var(--purple)">🧪 Pollution Index</div>' +
+                '<div style="text-align:center;padding:8px 0;"><div style="font-size:0.55rem;color:var(--text-dim);margin-bottom:4px;">OVERALL INDEX</div><div class="big-num ' + piCls + '">' + pi + '<span style="font-size:0.9rem">%</span></div><div class="risk-badge ' + riskClass(d.alert_level) + '" style="margin-top:6px;display:inline-block">' + (d.alert_level || '--') + '</div></div>' +
+                '<div class="prog-wrap"><div class="prog-fill ' + piCls + '" id="bar-poll" style="width:0%;background:linear-gradient(90deg,#302,var(--purple))"></div></div></div>' +
+                '<div class="panel-card"><div class="card-title" style="color:var(--purple)">⚗ Pollutant Levels</div>' +
+                '<div class="info-row"><div class="info-label">Arsenic</div><div class="info-value" style="color:' + (parseInt(poll.arsenic_ppb) > 10 ? 'var(--red)' : 'var(--green)') + '">' + poll.arsenic_ppb + ' ppb</div></div>' +
+                '<div class="info-row"><div class="info-label">Iron</div><div class="info-value" style="color:' + (parseFloat(poll.iron_mg_l) > 0.3 ? 'var(--orange)' : 'var(--green)') + '">' + poll.iron_mg_l + ' mg/L</div></div>' +
+                '<div class="info-row"><div class="info-label">Nitrate</div><div class="info-value">' + poll.nitrate_mg_l + ' mg/L</div></div>' +
+                '<div class="info-row"><div class="info-label">Coliform</div><div class="info-value" style="color:' + (parseInt(poll.coliform_cfu_ml) > 0 ? 'var(--orange)' : 'var(--green)') + '">' + poll.coliform_cfu_ml + ' CFU/mL</div></div>' +
+                '</div>' +
+                '<div class="panel-card"><div class="card-title" style="color:var(--purple)">🚨 Critical Info</div>' +
+                '<div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--red);padding:4px 0">' + (d.critical_contaminant || '--') + '</div>' +
+                '<div class="info-row"><div class="info-label">Affected Population</div><div class="info-value" style="color:var(--orange)">' + (d.affected_population || '--') + '</div></div>' +
+                '<div class="info-row"><div class="info-label">Trend</div><div class="info-value" style="color:var(--green)">' + (d.trend || '--') + '</div></div>' +
+                '</div>';
+            var rqHtml = Object.keys(rq).map(function (r) { return '<div class="risk-row"><div class="risk-label">🌊 ' + r.charAt(0).toUpperCase() + r.slice(1) + '</div><div class="risk-badge ' + riskClass(rq[r]) + '">' + rq[r] + '</div></div>'; }).join('');
+            gid('right-panel').innerHTML =
+                '<div class="panel-card"><div class="card-title" style="color:var(--purple)">🌊 River Quality</div>' + rqHtml + '</div>' +
+                '<div class="panel-card"><div class="card-title" style="color:var(--purple)">🏭 Discharge Zones</div><div style="margin-top:4px;">' + idz.map(function (z) { return '<span style="display:inline-block;font-family:var(--font-mono);font-size:0.55rem;padding:2px 6px;margin:2px;border:1px solid rgba(168,85,247,0.4);color:var(--purple)">' + z + '</span>'; }).join('') + '</div></div>' +
+                '<div class="panel-card"><div class="card-title" style="color:var(--purple)">🏗 Treatment Plants</div><div style="text-align:center;padding:8px 0;"><div class="big-num" style="color:var(--purple)">' + (d.treatment_plants_operational || '--') + '<span style="font-size:0.9rem;color:var(--text-dim)">/' + (d.treatment_plants_total || '--') + '</span></div></div><div class="prog-wrap"><div class="prog-fill" id="bar-plants" style="width:0%;background:linear-gradient(90deg,#302,var(--purple))"></div></div></div>' +
+                '<div class="panel-card"><div class="card-title" style="color:var(--purple)">⚠ Pollution Alerts</div>' + (d.alerts || []).map(function (a) { return '<div style="font-family:var(--font-mono);font-size:0.6rem;color:#cc88ff;margin:3px 0;padding:3px 8px;border-left:2px solid var(--purple)">' + a + '</div>'; }).join('') + '</div>';
+            setBar('bar-poll', pi); setBar('bar-plants', tp);
+        }
+
+        function renderDroughtTab(d) {
+            var di = Math.round((parseFloat(d.current_drought_index) || 0.65) * 100), fc90 = d.forecast_90d || {}, aff = d.affected_districts || [];
+            var diCls = di > 70 ? 'danger' : 'warn';
+            gid('left-panel').innerHTML =
+                '<div class="panel-card"><div class="card-title" style="color:#e67e22">☀ Drought Index</div>' +
+                '<div style="text-align:center;padding:8px 0;"><div style="font-size:0.55rem;color:var(--text-dim);margin-bottom:4px;">DROUGHT RISK INDEX</div><div class="big-num ' + diCls + '">' + di + '<span style="font-size:0.9rem">%</span></div><div style="font-family:var(--font-head);font-size:0.6rem;color:#e67e22;margin-top:5px;">' + (d.drought_category || '--') + '</div></div>' +
+                '<div class="prog-wrap"><div class="prog-fill ' + diCls + '" id="bar-di" style="width:0%"></div></div></div>' +
+                '<div class="panel-card"><div class="card-title" style="color:#e67e22">📊 Drought Indices</div>' +
+                '<div class="info-row"><div class="info-label">SPI-3 Month</div><div class="info-value" style="color:' + (parseFloat(d.spi_3month) < -1 ? 'var(--red)' : 'var(--text-main)') + '">' + d.spi_3month + '</div></div>' +
+                '<div class="info-row"><div class="info-label">SPI-6 Month</div><div class="info-value">' + d.spi_6month + '</div></div>' +
+                '<div class="info-row"><div class="info-label">PDSI</div><div class="info-value" style="color:' + (parseFloat(d.pdsi) < -2 ? 'var(--red)' : parseFloat(d.pdsi) < 0 ? 'var(--orange)' : 'var(--green)') + '">' + d.pdsi + '</div></div>' +
+                '<div class="info-row"><div class="info-label">Streamflow %ile</div><div class="info-value" style="color:' + (parseInt(d.streamflow_percentile) < 25 ? 'var(--red)' : 'var(--text-main)') + '">' + d.streamflow_percentile + 'th</div></div>' +
+                '<div class="info-row"><div class="info-label">Soil Moisture Δ</div><div class="info-value" style="color:var(--orange)">' + d.soil_moisture_anomaly + '</div></div>' +
+                '</div>' +
+                '<div class="panel-card"><div class="card-title" style="color:#e67e22">🌾 Impact</div>' +
+                '<div class="risk-row"><div class="risk-label">🌾 Crop Stress</div><div class="risk-badge ' + riskClass(d.crop_water_stress) + '">' + (d.crop_water_stress || '--') + '</div></div>' +
+                '<div class="risk-row"><div class="risk-label">🐄 Livestock</div><div class="risk-badge ' + riskClass(d.livestock_impact) + '">' + (d.livestock_impact || '--') + '</div></div>' +
+                '<div class="info-row" style="margin-top:5px;"><div class="info-label">Crop Loss Est.</div><div class="info-value" style="color:var(--red)">' + (d.crop_loss_estimate || '--') + '</div></div>' +
+                '<div class="info-row"><div class="info-label">Affected Area</div><div class="info-value" style="color:var(--orange)">' + (d.affected_area_pct || '--') + '%</div></div>' +
+                '</div>';
+            gid('right-panel').innerHTML =
+                '<div class="panel-card"><div class="card-title" style="color:#e67e22">🔭 90-Day Forecast</div>' +
+                '<div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--orange);margin-bottom:8px;">' + (fc90.outlook || '--') + '</div>' +
+                '<div class="info-row"><div class="info-label">Improvement Prob.</div><div class="info-value" style="color:var(--green)">' + (fc90.probability_improvement || '--') + '%</div></div>' +
+                '<div class="info-row"><div class="info-label">Expected Rainfall</div><div class="info-value">' + (fc90.expected_rainfall_mm || '--') + ' mm</div></div>' +
+                '<div class="info-row"><div class="info-label">Temp Anomaly</div><div class="info-value" style="color:var(--red)">' + (fc90.temperature_anomaly || '--') + '</div></div>' +
+                '</div>' +
+                '<div class="panel-card"><div class="card-title" style="color:#e67e22">📍 Affected Districts</div><div style="margin-top:4px;">' + aff.map(function (a) { return '<span style="display:inline-block;font-family:var(--font-mono);font-size:0.55rem;padding:2px 6px;margin:2px;border:1px solid rgba(230,126,34,0.4);color:#e67e22">' + a + '</span>'; }).join('') + '</div></div>' +
+                '<div class="panel-card"><div class="card-title" style="color:#e67e22">⚠ Drought Alerts</div>' + (d.alerts || []).map(function (a) { return '<div style="font-family:var(--font-mono);font-size:0.6rem;color:#e09050;margin:3px 0;padding:3px 8px;border-left:2px solid #e67e22">' + a + '</div>'; }).join('') + '</div>';
+            setBar('bar-di', di);
+        }
+
+        function renderTab(tab, data) {
+            if (tab === 'flood') renderFloodTab(data);
+            else if (tab === 'stress') renderStressTab(data);
+            else if (tab === 'pollution') renderPollutionTab(data);
+            else if (tab === 'drought') renderDroughtTab(data);
+        }
+
+        function renderLoadingPanels() {
+            var h = '<div class="panel-card"><div style="text-align:center;padding:20px"><div class="spinner"></div><div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text-dim);margin-top:8px">AI ANALYZING...</div></div></div>';
+            gid('left-panel').innerHTML = h; gid('right-panel').innerHTML = h;
+        }
+
+        // Mobile drawer — shows key info cards on small screens
+        function updateMobileDrawer(d) {
+            var loc = d.location_info || {}, risks = d.risks || {};
+            gid('mobile-drawer').innerHTML =
+                '<div class="panel-card"><div class="card-title" style="font-size:0.5rem">📍 ' + currentLocation.split(',')[0] + '</div>' +
+                '<div class="info-row"><div class="info-label">Temp</div><div class="info-value">' + (loc.temp || '--') + '</div></div>' +
+                '<div class="info-row"><div class="info-label">Rain</div><div class="info-value">' + (loc.rainfall || '--') + '</div></div></div>' +
+                '<div class="panel-card"><div class="card-title" style="font-size:0.5rem">⚠ Risks</div>' +
+                '<div class="risk-row"><div class="risk-label">Flood</div><div class="risk-badge ' + riskClass(risks.flood) + '">' + (risks.flood || '--') + '</div></div>' +
+                '<div class="risk-row"><div class="risk-label">Drought</div><div class="risk-badge ' + riskClass(risks.drought) + '">' + (risks.drought || '--') + '</div></div></div>';
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // STEP 8 — TAB SYSTEM + AUTO-REFRESH
+        // ═══════════════════════════════════════════════════════
+        var currentTab = 'flood', currentLocation = 'West Bengal, India';
+        var isFlaskServer = (window.location.protocol === 'http:' || window.location.protocol === 'https:') && window.location.hostname !== '';
+        var tabEndpoints = { flood: '/api/water-data', stress: '/api/water-stress', pollution: '/api/pollution-alert', drought: '/api/drought-forecast' };
+
+        // Auto-refresh
+        var refreshInterval = 300; // seconds
+        var refreshRemaining = refreshInterval;
+        var refreshTimer = null;
+
+        function startRefreshCountdown() {
+            clearInterval(refreshTimer);
+            refreshRemaining = refreshInterval;
+            refreshTimer = setInterval(function () {
+                refreshRemaining--;
+                var btn = gid('refresh-countdown');
+                if (btn) btn.textContent = '↺ ' + refreshRemaining + 's';
+                if (refreshRemaining <= 0) {
+                    loadTab(currentTab, currentLocation);
+                    refreshRemaining = refreshInterval;
+                }
+            }, 1000);
+        }
+
+        gid('refresh-countdown').addEventListener('click', function () {
+            loadTab(currentTab, currentLocation);
+        });
+
+        function loadTab(tab, location) {
+            currentTab = tab;
+            if (location) currentLocation = location;
+            document.querySelectorAll('.tab').forEach(function (t) { t.classList.toggle('active', t.dataset.tab === tab); });
+            renderLoadingPanels();
+            if (!isFlaskServer) {
+                var demo = getDemoData(tab); renderTab(tab, demo); updateTicker(demo.alerts || []); startRefreshCountdown(); return;
+            }
+            var url = tabEndpoints[tab] + '?location=' + encodeURIComponent(currentLocation);
+            var ctrl = new AbortController(), timer = setTimeout(function () { ctrl.abort(); }, 12000);
+            fetch(url, { signal: ctrl.signal })
+                .then(function (r) { clearTimeout(timer); if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                .then(function (data) { if (data.fallback || data.error) throw new Error('fallback'); renderTab(tab, data); updateTicker(data.alerts || []); startRefreshCountdown(); })
+                .catch(function (e) { clearTimeout(timer); console.warn('API error:', e.message); var demo = getDemoData(tab); renderTab(tab, demo); updateTicker(demo.alerts || []); startRefreshCountdown(); });
+        }
+
+        document.querySelectorAll('.tab').forEach(function (t) { t.addEventListener('click', function () { if (t.dataset.tab !== currentTab) loadTab(t.dataset.tab); }); });
+
+        // ═══════════════════════════════════════════════════════
+        // STEP 9 — ALERT HISTORY
+        // ═══════════════════════════════════════════════════════
+        var alertHistory = [];
+
+        function addAlertHistory(text) {
+            var now = new Date(), ist = new Date(now.getTime() + now.getTimezoneOffset() * 60000 + 19800000);
+            var time = ist.toTimeString().slice(0, 8);
+            alertHistory.unshift({ time: time, text: text });
+            if (alertHistory.length > 50) alertHistory.pop();
+            renderAlertHistory();
+        }
+
+        function renderAlertHistory() {
+            var list = gid('alert-history-list');
+            if (!list) return;
+            list.innerHTML = alertHistory.map(function (a) {
+                return '<div class="ah-item"><div class="ah-time">' + a.time + '</div><div class="ah-text">' + a.text + '</div></div>';
+            }).join('');
+        }
+
+        gid('alert-hist-btn').addEventListener('click', function () { gid('alert-history-panel').classList.toggle('open'); });
+        gid('ah-close').addEventListener('click', function () { gid('alert-history-panel').classList.remove('open'); });
+
+        // ═══════════════════════════════════════════════════════
+        // STEP 10 — CHARTS
+        // ═══════════════════════════════════════════════════════
+        var chartInstances = {};
+
+        function generateHistoricalData(days, min, max, trend) {
+            var data = [];
+            var val = (min + max) / 2;
+            for (var i = 0; i < days; i++) {
+                val += (Math.random() - 0.48) * ((max - min) * 0.15);
+                if (trend === 'up') val += 0.3;
+                if (trend === 'down') val -= 0.3;
+                val = Math.max(min, Math.min(max, val));
+                data.push(Math.round(val * 10) / 10);
+            }
+            return data;
+        }
+
+        function generateLabels(days) {
+            var labels = [], now = new Date();
+            for (var i = days - 1; i >= 0; i--) {
+                var d = new Date(now); d.setDate(d.getDate() - i);
+                labels.push((d.getMonth() + 1) + '/' + d.getDate());
+            }
+            return labels;
+        }
+
+        function buildCharts(days) {
+            var labels = generateLabels(days);
+            var chartDefs = [
+                { id: 'chart-rain', label: 'Rainfall (mm)', data: generateHistoricalData(days, 0, 80, ''), color: '#00bfff', min: 0, max: 100 },
+                { id: 'chart-discharge', label: 'River Discharge (m³/s)', data: generateHistoricalData(days, 200, 900, ''), color: '#00ff88', min: 0, max: 1000 },
+                { id: 'chart-reservoir', label: 'Reservoir Level (%)', data: generateHistoricalData(days, 40, 80, 'down'), color: '#1a6fff', min: 0, max: 100 },
+                { id: 'chart-drought', label: 'Drought Index', data: generateHistoricalData(days, 0.3, 0.8, 'up').map(function (v) { return Math.round(v * 100); }), color: '#ff8c00', min: 0, max: 100 }
+            ];
+            chartDefs.forEach(function (def) {
+                var canvas = gid(def.id);
+                if (!canvas) return;
+                if (chartInstances[def.id]) chartInstances[def.id].destroy();
+                chartInstances[def.id] = new Chart(canvas, {
+                    type: 'line',
+                    data: { labels: labels, datasets: [{ label: def.label, data: def.data, borderColor: def.color, backgroundColor: def.color + '22', borderWidth: 1.5, pointRadius: 0, tension: 0.4, fill: true }] },
+                    options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#5a8899', font: { size: 9 }, maxTicksLimit: 8 }, grid: { color: 'rgba(0,245,255,0.05)' } }, y: { min: def.min, max: def.max, ticks: { color: '#5a8899', font: { size: 9 } }, grid: { color: 'rgba(0,245,255,0.05)' } } } }
+                });
+            });
+        }
+
+        gid('charts-btn').addEventListener('click', function () {
+            gid('charts-overlay').classList.add('open');
+            buildCharts(30);
+        });
+        gid('charts-close').addEventListener('click', function () { gid('charts-overlay').classList.remove('open'); });
+        document.querySelectorAll('.cperiod').forEach(function (b) {
+            b.addEventListener('click', function () {
+                document.querySelectorAll('.cperiod').forEach(function (x) { x.classList.remove('active'); });
+                b.classList.add('active');
+                buildCharts(parseInt(b.dataset.days));
+            });
+        });
+
+        // ═══════════════════════════════════════════════════════
+        // STEP 11 — AI CHAT
+        // ═══════════════════════════════════════════════════════
+        var chatOpen = false;
+        var chatContext = {};
+
+        gid('chat-bubble').addEventListener('click', function () {
+            chatOpen = !chatOpen;
+            gid('chat-panel').classList.toggle('open', chatOpen);
+            if (chatOpen) gid('chat-input').focus();
+        });
+        gid('chat-close').addEventListener('click', function () { chatOpen = false; gid('chat-panel').classList.remove('open'); });
+
+        function appendMsg(text, cls) {
+            var msgs = gid('chat-messages');
+            var d = document.createElement('div');
+            d.className = 'chat-msg ' + cls;
+            d.textContent = text;
+            msgs.appendChild(d);
+            msgs.scrollTop = msgs.scrollHeight;
+            return d;
+        }
+
+        function sendChat() {
+            var inp = gid('chat-input'), q = inp.value.trim();
+            if (!q) return;
+            inp.value = '';
+            appendMsg(q, 'user');
+            var thinking = appendMsg('Analyzing water data...', 'thinking');
+
+            if (!isFlaskServer) {
+                setTimeout(function () {
+                    thinking.remove();
+                    var answers = {
+                        'flood': 'Current flood risk is HIGH. Hooghly River discharge is elevated at 450 m³/s. Severe warning issued for North 24 Parganas and Howrah districts.',
+                        'drought': 'Drought risk index is at 72% in western districts. Bankura and Purulia are most affected. Soil moisture is critically LOW.',
+                        'stress': 'Water stress is MODERATE at 67%. Agricultural sector is under HIGH stress due to inadequate irrigation supply.',
+                        'pollution': 'Damodar River has HIGH pollution levels. Arsenic concentration at 18 ppb exceeds WHO limits of 10 ppb in several blocks.',
+                        'reservoir': 'Main reservoirs at 52% capacity, below seasonal normal. Maithon Dam monitoring active.',
+                        'district': 'Based on current data: Bankura (drought HIGH), Bardhaman (stress HIGH), Howrah (flood MODERATE), Darjeeling (LOW risk overall).',
+                        'default': 'Based on current monitoring data for ' + currentLocation + ': Flood risk is HIGH in coastal areas, water stress is MODERATE, and drought conditions are developing in western districts. Recommend monitoring river discharge levels closely.'
+                    };
+                    var key = 'default';
+                    var ql = q.toLowerCase();
+                    if (ql.includes('flood') || ql.includes('river')) key = 'flood';
+                    else if (ql.includes('drought') || ql.includes('soil')) key = 'drought';
+                    else if (ql.includes('stress') || ql.includes('irrigation')) key = 'stress';
+                    else if (ql.includes('pollut') || ql.includes('arsenic') || ql.includes('quality')) key = 'pollution';
+                    else if (ql.includes('reservoir') || ql.includes('dam') || ql.includes('capacity')) key = 'reservoir';
+                    else if (ql.includes('district') || ql.includes('risk') || ql.includes('highest')) key = 'district';
+                    appendMsg(answers[key], 'ai');
+                }, 800);
+                return;
+            }
+
+            fetch('/api/chat?q=' + encodeURIComponent(q) + '&location=' + encodeURIComponent(currentLocation))
+                .then(function (r) { return r.json(); })
+                .then(function (d) { thinking.remove(); appendMsg(d.answer || d.response || 'No response from AI.', 'ai'); })
+                .catch(function () { thinking.remove(); appendMsg('AI assistant unavailable. Check Flask server.', 'ai'); });
+        }
+
+        gid('chat-send').addEventListener('click', sendChat);
+        gid('chat-input').addEventListener('keydown', function (e) { if (e.key === 'Enter') sendChat(); });
+
+        // ═══════════════════════════════════════════════════════
+        // STEP 12 — SEARCH
+        // ═══════════════════════════════════════════════════════
+        var overlay = gid('search-overlay'), searchInput = gid('search-input');
+        gid('search-btn').addEventListener('click', function () { overlay.classList.add('open'); searchInput.focus(); });
+        gid('search-close').addEventListener('click', function () { overlay.classList.remove('open'); });
+        overlay.addEventListener('click', function (e) { if (e.target === overlay) overlay.classList.remove('open'); });
+
+        function doSearch() {
+            var q = searchInput.value.trim(); if (!q) return;
+            var result = gid('search-result');
+            result.innerHTML = '<div style="text-align:center;padding:24px"><div class="spinner" style="margin:0 auto 10px"></div><div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text-dim)">AI ANALYZING: ' + q.toUpperCase() + '...</div></div>';
+            if (!isFlaskServer) {
+                setTimeout(function () { showSearchResult({ found: true, location_name: q, district: 'West Bengal', state: 'India', summary: 'Demo mode: Start Flask server for real AI analysis of ' + q + '.', coordinates: { lat: 22.9, lng: 88.3 }, risks: { flood: 'MODERATE', stress: 'MODERATE', pollution: 'LOW', drought: 'LOW' }, location_info: { temp: '31C', rainfall: '8 mm', groundwater: '-7.2 m', humidity: '72%' }, reservoir: { capacity_pct: 58 }, drought_monitor: { risk_pct: 45 }, key_water_bodies: ['Hooghly River', 'Local canals'], alerts: ['Demo mode — connect Flask for live analysis'] }); }, 800);
+                return;
+            }
+            fetch('/api/search-location?q=' + encodeURIComponent(q))
+                .then(function (r) { return r.json(); })
+                .then(function (d) { showSearchResult(d); })
+                .catch(function () { result.innerHTML = '<div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--red);text-align:center;padding:20px">⚠ Search failed.</div>'; });
+        }
+
+        function showSearchResult(data) {
+            var result = gid('search-result');
+            if (!data.found) { result.innerHTML = '<div style="text-align:center;padding:20px;font-family:var(--font-mono);font-size:0.65rem;color:var(--red)">⚠ Location not found.</div>'; return; }
+            var risks = data.risks || {}, loc = data.location_info || {}, res = data.reservoir || {}, dr = data.drought_monitor || {}, wb = data.key_water_bodies || [], alerts = data.alerts || [];
+            var lat = data.coordinates ? data.coordinates.lat : 22.9, lng = data.coordinates ? data.coordinates.lng : 88.3;
+            var ln = (data.location_name || '').replace(/'/g, "\\'");
+            result.innerHTML =
+                '<div class="sr-location">' + (data.location_name || 'Unknown') + '</div>' +
+                '<div class="sr-district">' + (data.district || '') + ', ' + (data.state || 'West Bengal') + '</div>' +
+                (data.summary ? '<div class="sr-summary">' + data.summary + '</div>' : '') +
+                '<div style="font-family:var(--font-head);font-size:0.55rem;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">Risk Profile</div>' +
+                '<div class="sr-risk-row">' + [['Flood', risks.flood], ['Stress', risks.stress], ['Pollution', risks.pollution], ['Drought', risks.drought]].map(function (x) { return '<div class="sr-risk-item"><div class="sr-risk-label">' + x[0] + '</div><div class="risk-badge ' + riskClass(x[1]) + '" style="font-size:0.5rem">' + (x[1] || '--') + '</div></div>'; }).join('') + '</div>' +
+                '<div class="sr-grid">' +
+                '<div class="sr-cell"><div class="sr-cell-label">Temperature</div><div class="sr-cell-value">' + (loc.temp || '--') + '</div></div>' +
+                '<div class="sr-cell"><div class="sr-cell-label">Rainfall</div><div class="sr-cell-value">' + (loc.rainfall || '--') + '</div></div>' +
+                '<div class="sr-cell"><div class="sr-cell-label">Groundwater</div><div class="sr-cell-value" style="color:var(--orange)">' + (loc.groundwater || '--') + '</div></div>' +
+                '<div class="sr-cell"><div class="sr-cell-label">Reservoir</div><div class="sr-cell-value" style="color:var(--cyan)">' + (res.capacity_pct || '--') + '%</div></div>' +
+                '</div>' +
+                (wb.length ? '<div style="font-family:var(--font-head);font-size:0.55rem;color:var(--text-dim);text-transform:uppercase;margin:8px 0 4px">Water Bodies</div><div>' + wb.map(function (w) { return '<span style="display:inline-block;font-family:var(--font-mono);font-size:0.55rem;padding:2px 6px;margin:2px;border:1px solid rgba(26,111,255,0.4);color:#7aafff">💧 ' + w + '</span>'; }).join('') + '</div>' : '') +
+                (alerts.length ? '<div style="font-family:var(--font-head);font-size:0.55rem;color:var(--text-dim);text-transform:uppercase;margin:8px 0 4px">Alerts</div>' + alerts.map(function (a) { return '<div class="sr-alert-item">' + a + '</div>'; }).join('') : '') +
+                '<button id="sr-go-map-btn" onclick="flyToLocation(' + lat + ',' + lng + ',\'' + ln + '\')">📍 FLY TO LOCATION ON MAP</button>';
+        }
+
+        function flyToLocation(lat, lng, name) {
+            overlay.classList.remove('open');
+            searchLayer.clearLayers();
+            map.flyTo([lat, lng], 11, { duration: 1.5 });
+            var icon = L.divIcon({ html: '<div style="width:16px;height:16px;background:var(--cyan);border-radius:50%;border:2px solid var(--cyan);box-shadow:0 0 12px var(--cyan)"></div>', className: '', iconSize: [16, 16], iconAnchor: [8, 8] });
+            L.marker([lat, lng], { icon: icon }).bindPopup('<div style="font-family:\'Orbitron\',sans-serif;font-size:0.7rem;color:var(--cyan)">📍 ' + name + '</div>').addTo(searchLayer).openPopup();
+            currentLocation = name;
+            loadTab(currentTab, name);
+        }
+
+        gid('search-go').addEventListener('click', doSearch);
+        searchInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') doSearch(); });
+
+        // ═══════════════════════════════════════════════════════
+        // STEP 13 — UI CONTROLS
+        // ═══════════════════════════════════════════════════════
+
+        // Fullscreen
+        gid('fullscreen-btn').addEventListener('click', function () {
+            document.body.classList.toggle('fullscreen');
+            this.textContent = document.body.classList.contains('fullscreen') ? '⛶ Exit' : '⛶ Full';
+        });
+
+        // Light/Dark theme
+        var isLight = false;
+        gid('theme-btn').addEventListener('click', function () {
+            isLight = !isLight;
+            document.body.classList.toggle('light-theme', isLight);
+            this.textContent = isLight ? '🌑 Dark' : '☀ Light';
+        });
+
+        // Keyboard shortcuts help
+        gid('kbd-btn').addEventListener('click', function () { gid('kbd-help').classList.toggle('open'); });
+
+        // Browser Notifications
+        function requestNotifications() {
+            if (!('Notification' in window)) return;
+            if (Notification.permission === 'default') Notification.requestPermission();
+        }
+
+        function sendNotification(title, body) {
+            if (Notification.permission === 'granted') {
+                new Notification(title, { body: body, icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">💧</text></svg>' });
+            }
+        }
+
+        function checkRiskNotifications(data) {
+            if (!data || !data.risks) return;
+            if (data.risks.flood === 'HIGH') sendNotification('⚠ HIGH FLOOD RISK', 'Flood risk is HIGH in ' + currentLocation + '. Check emergency alerts.');
+            if (data.risks.drought === 'HIGH') sendNotification('☀ HIGH DROUGHT RISK', 'Drought index critical in ' + currentLocation + '.');
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // STEP 14 — KEYBOARD SHORTCUTS
+        // ═══════════════════════════════════════════════════════
+        document.addEventListener('keydown', function (e) {
+            var tag = document.activeElement.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+            var k = e.key.toUpperCase();
+            if (k === '1') loadTab('flood');
+            else if (k === '2') loadTab('stress');
+            else if (k === '3') loadTab('pollution');
+            else if (k === '4') loadTab('drought');
+            else if (k === 'F') gid('fullscreen-btn').click();
+            else if (k === 'L') gid('layer-toggle-btn').click();
+            else if (k === 'H') toggleHeatmap();
+            else if (k === 'A') { chatOpen = !chatOpen; gid('chat-panel').classList.toggle('open', chatOpen); if (chatOpen) gid('chat-input').focus(); }
+            else if (k === 'C') gid('charts-btn').click();
+            else if (k === 'R') loadTab(currentTab, currentLocation);
+            else if (k === 'T') gid('theme-btn').click();
+            else if (k === 'ESCAPE') {
+                overlay.classList.remove('open');
+                gid('charts-overlay').classList.remove('open');
+                gid('alert-history-panel').classList.remove('open');
+                gid('kbd-help').classList.remove('open');
+                gid('chat-panel').classList.remove('open');
+                chatOpen = false;
+                document.body.classList.remove('fullscreen');
+            }
+        });
+
+        // ═══════════════════════════════════════════════════════
+        // STEP 15 — BOOT
+        // ═══════════════════════════════════════════════════════
+        requestNotifications();
+
+        setTimeout(function () {
+            loadTab('flood');
+        }, 300);
+    </script>
+</body>
+
+</html>
