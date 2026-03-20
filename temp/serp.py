@@ -3,7 +3,7 @@ import requests
 url = "https://www.searchapi.io/api/v1/search"
 params = {
     "engine": "google",
-    "q": "weather today in kolkata",
+    "q": "how many areas are affected in west bengal in last 24 hours weather changes",
     "api_key": "ymDYGGpxG4YpgNrBdWxZd3vB"
 }
 
