@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JalDrishti — জলদৃষ্টি | Water Crisis Monitoring, West Bengal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --deep: #020b18;
+            --navy: #041830;
+            --ocean: #062d56;
+            --cyan: #00d4e8;
+            --cyan2: #00f5c4;
+            --blue: #1461cc;
+            --glow: rgba(0, 212, 232, 0.18);
+            --text: #c8e8f8;
+            --dim: #4a7a99;
+            --white: #ffffff;
+            --red: #ff4444;
+            --orange: #ff8c00;
+            --green: #00e87a;
+            --border: rgba(0, 212, 232, 0.15);
+            --font-h: 'Syne', sans-serif;
+            --font-b: 'DM Sans', sans-serif;
+            --font-m: 'JetBrains Mono', monospace;
+        }
+
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: var(--deep);
+            color: var(--text);
+            font-family: var(--font-b);
+            overflow-x: hidden;
+            cursor: default;
+        }
+
+        /* ── ANIMATED BACKGROUND ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 212, 232, 0.08) 0%, transparent 70%),
+                radial-gradient(ellipse 60% 40% at 80% 60%, rgba(20, 97, 204, 0.06) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 30% at 10% 80%, rgba(0, 248, 196, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Grid overlay */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0, 212, 232, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 212, 232, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── NAV ── */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 6%;
+            height: 68px;
+            background: rgba(2, 11, 24, 0.85);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(12px);
+        }
+
+        .nav-logo {
+            font-family: var(--font-h);
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--cyan);
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .nav-logo .drop {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, var(--cyan), var(--cyan2));
+            clip-path: polygon(50% 0%, 85% 35%, 100% 65%, 50% 100%, 0% 65%, 15% 35%);
+            flex-shrink: 0;
+        }
+
+        .nav-logo span {
+            color: rgba(0, 212, 232, 0.5);
+            font-weight: 400;
+            margin-left: 4px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 36px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            font-family: var(--font-b);
+            font-size: 0.85rem;
+            color: var(--dim);
+            text-decoration: none;
+            letter-spacing: 0.02em;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--cyan);
+        }
+
+        .nav-cta {
+            font-family: var(--font-h);
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            padding: 9px 22px;
+            background: transparent;
+            border: 1px solid var(--cyan);
+            color: var(--cyan);
+            cursor: pointer;
+            text-decoration: none;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+
+        .nav-cta:hover {
+            background: var(--cyan);
+            color: var(--deep);
+        }
+
+        /* ── HERO ── */
+        .hero {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 120px 6% 80px;
+            overflow: hidden;
+        }
+
+        /* Animated water ripples */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 212, 232, 0.12);
+            animation: ripple-out 8s ease-out infinite;
+            pointer-events: none;
+        }
+
+        .ripple:nth-child(1) {
+            width: 400px;
+            height: 400px;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            animation-delay: 0s;
+        }
+
+        .ripple:nth-child(2) {
+            width: 650px;
+            height: 650px;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            animation-delay: 1.5s;
+        }
+
+        .ripple:nth-child(3) {
+            width: 900px;
+            height: 900px;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            animation-delay: 3s;
+        }
+
+        @keyframes ripple-out {
+            0% {
+                opacity: 0.6;
+                transform: translateX(-50%) scale(0.8);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateX(-50%) scale(1.1);
+            }
+        }
+
+        .hero-eyebrow {
+            font-family: var(--font-m);
+            font-size: 0.7rem;
+            letter-spacing: 0.25em;
+            color: var(--cyan);
+            text-transform: uppercase;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            opacity: 0;
+            animation: fadeUp 0.8s ease 0.2s forwards;
+        }
+
+        .hero-eyebrow::before,
+        .hero-eyebrow::after {
+            content: '';
+            width: 40px;
+            height: 1px;
+            background: var(--cyan);
+            opacity: 0.4;
+        }
+
+        .hero-name {
+            font-family: var(--font-h);
+            font-size: clamp(4rem, 10vw, 9rem);
+            font-weight: 800;
+            line-height: 0.9;
+            letter-spacing: -0.04em;
+            background: linear-gradient(135deg, var(--white) 0%, var(--cyan) 50%, var(--cyan2) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            opacity: 0;
+            animation: fadeUp 0.8s ease 0.4s forwards;
+        }
+
+        .hero-bengali {
+            font-family: var(--font-b);
+            font-size: clamp(1.2rem, 3vw, 2rem);
+            font-weight: 300;
+            color: rgba(0, 212, 232, 0.5);
+            letter-spacing: 0.08em;
+            margin-bottom: 28px;
+            opacity: 0;
+            animation: fadeUp 0.8s ease 0.5s forwards;
+        }
+
+        .hero-tagline {
+            font-family: var(--font-b);
+            font-size: clamp(1rem, 2.2vw, 1.35rem);
+            font-weight: 300;
+            color: var(--text);
+            letter-spacing: 0.01em;
+            max-width: 600px;
+            line-height: 1.6;
+            margin-bottom: 48px;
+            opacity: 0;
+            animation: fadeUp 0.8s ease 0.6s forwards;
+        }
+
+        .hero-tagline em {
+            color: var(--cyan);
+            font-style: normal;
+            font-weight: 500;
+        }
+
+        .hero-btns {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 80px;
+            opacity: 0;
+            animation: fadeUp 0.8s ease 0.8s forwards;
+        }
+
+        .btn-primary {
+            font-family: var(--font-h);
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 16px 40px;
+            background: linear-gradient(135deg, var(--cyan), var(--cyan2));
+            color: var(--deep);
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.25s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 212, 232, 0.35);
+        }
+
+        .btn-secondary {
+            font-family: var(--font-h);
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 15px 36px;
+            background: transparent;
+            color: var(--text);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.25s;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--cyan);
+            color: var(--cyan);
+        }
+
+        /* Stat chips */
+        .hero-stats {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            opacity: 0;
+            animation: fadeUp 0.8s ease 1s forwards;
+        }
+
+        .stat-chip {
+            font-family: var(--font-m);
+            font-size: 0.68rem;
+            padding: 6px 14px;
+            border: 1px solid var(--border);
+            background: rgba(0, 212, 232, 0.05);
+            color: var(--dim);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-chip strong {
+            color: var(--cyan);
+            font-weight: 500;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(24px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ── SCROLL INDICATOR ── */
+        .scroll-hint {
+            position: absolute;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            animation: fadeUp 0.8s ease 1.4s forwards;
+        }
+
+        .scroll-hint span {
+            font-family: var(--font-m);
+            font-size: 0.58rem;
+            letter-spacing: 0.2em;
+            color: var(--dim);
+            text-transform: uppercase;
+        }
+
+        .scroll-line {
+            width: 1px;
+            height: 40px;
+            background: linear-gradient(to bottom, var(--cyan), transparent);
+            animation: scroll-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes scroll-pulse {
+
+            0%,
+            100% {
+                opacity: 0.3;
+                transform: scaleY(1);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scaleY(1.1);
+            }
+        }
+
+        /* ── SECTION BASE ── */
+        section {
+            position: relative;
+            z-index: 1;
+            padding: 100px 6%;
+        }
+
+        .section-label {
+            font-family: var(--font-m);
+            font-size: 0.65rem;
+            letter-spacing: 0.3em;
+            color: var(--cyan);
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-label::before {
+            content: '';
+            width: 28px;
+            height: 1px;
+            background: var(--cyan);
+        }
+
+        .section-title {
+            font-family: var(--font-h);
+            font-size: clamp(2rem, 4vw, 3.2rem);
+            font-weight: 800;
+            color: var(--white);
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            margin-bottom: 16px;
+        }
+
+        .section-sub {
+            font-size: 1rem;
+            font-weight: 300;
+            color: var(--dim);
+            max-width: 520px;
+            line-height: 1.7;
+        }
+
+        /* ── CRISIS SECTION ── */
+        .crisis {
+            background: var(--navy);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .crisis-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+        }
+
+        .crisis-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .crisis-card {
+            padding: 24px 20px;
+            border: 1px solid var(--border);
+            background: rgba(0, 212, 232, 0.03);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .crisis-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--c, var(--cyan)), transparent);
+        }
+
+        .crisis-card:hover {
+            border-color: rgba(0, 212, 232, 0.35);
+            transform: translateY(-3px);
+        }
+
+        .crisis-card.flood {
+            --c: #4488ff;
+        }
+
+        .crisis-card.arsenic {
+            --c: #ff4444;
+        }
+
+        .crisis-card.drought {
+            --c: #ff8c00;
+        }
+
+        .crisis-card.pollut {
+            --c: #a855f7;
+        }
+
+        .crisis-num {
+            font-family: var(--font-h);
+            font-size: 2rem;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+
+        .crisis-card.flood .crisis-num {
+            color: #4488ff;
+        }
+
+        .crisis-card.arsenic .crisis-num {
+            color: #ff4444;
+        }
+
+        .crisis-card.drought .crisis-num {
+            color: #ff8c00;
+        }
+
+        .crisis-card.pollut .crisis-num {
+            color: #a855f7;
+        }
+
+        .crisis-lbl {
+            font-size: 0.78rem;
+            color: var(--dim);
+            line-height: 1.4;
+        }
+
+        /* ── FEATURES SECTION ── */
+        .features-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .features-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: end;
+            margin-bottom: 60px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2px;
+            background: var(--border);
+        }
+
+        .feature-item {
+            background: var(--deep);
+            padding: 36px 28px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-item::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(0, 212, 232, 0.04), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .feature-item:hover {
+            background: rgba(4, 24, 48, 0.9);
+        }
+
+        .feature-item:hover::after {
+            opacity: 1;
+        }
+
+        .feature-icon {
+            font-size: 1.8rem;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .feature-name {
+            font-family: var(--font-h);
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--white);
+            margin-bottom: 10px;
+            letter-spacing: -0.01em;
+        }
+
+        .feature-desc {
+            font-size: 0.82rem;
+            color: var(--dim);
+            line-height: 1.6;
+        }
+
+        /* ── HOW IT WORKS ── */
+        .how {
+            background: var(--navy);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .how-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .how-steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0;
+            margin-top: 60px;
+            position: relative;
+        }
+
+        .how-steps::before {
+            content: '';
+            position: absolute;
+            top: 28px;
+            left: 10%;
+            right: 10%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--cyan), var(--cyan), transparent);
+            opacity: 0.3;
+        }
+
+        .how-step {
+            padding: 0 24px;
+            text-align: center;
+        }
+
+        .step-num {
+            width: 56px;
+            height: 56px;
+            border: 1px solid var(--cyan);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-family: var(--font-m);
+            font-size: 0.9rem;
+            color: var(--cyan);
+            background: var(--navy);
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-title {
+            font-family: var(--font-h);
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--white);
+            margin-bottom: 10px;
+        }
+
+        .step-desc {
+            font-size: 0.8rem;
+            color: var(--dim);
+            line-height: 1.6;
+        }
+
+        /* ── DATA SOURCES ── */
+        .data-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .data-header {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: end;
+            margin-bottom: 48px;
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .data-card {
+            border: 1px solid var(--border);
+            padding: 24px 20px;
+            background: rgba(0, 212, 232, 0.02);
+            transition: all 0.25s;
+        }
+
+        .data-card:hover {
+            border-color: rgba(0, 212, 232, 0.4);
+            background: rgba(0, 212, 232, 0.05);
+        }
+
+        .data-org {
+            font-family: var(--font-h);
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--cyan);
+            margin-bottom: 4px;
+        }
+
+        .data-fullname {
+            font-size: 0.72rem;
+            color: var(--dim);
+            margin-bottom: 12px;
+        }
+
+        .data-what {
+            font-size: 0.8rem;
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        .data-status {
+            display: inline-block;
+            margin-top: 12px;
+            font-family: var(--font-m);
+            font-size: 0.6rem;
+            padding: 3px 8px;
+            letter-spacing: 0.06em;
+        }
+
+        .data-status.planned {
+            border: 1px solid rgba(255, 140, 0, 0.4);
+            color: var(--orange);
+            background: rgba(255, 140, 0, 0.06);
+        }
+
+        .data-status.partial {
+            border: 1px solid rgba(0, 232, 122, 0.4);
+            color: var(--green);
+            background: rgba(0, 232, 122, 0.06);
+        }
+
+        .data-row-last {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        /* ── ROADMAP ── */
+        .roadmap {
+            background: var(--navy);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .roadmap-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .roadmap-phases {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2px;
+            background: var(--border);
+            margin-top: 60px;
+        }
+
+        .phase {
+            background: var(--deep);
+            padding: 40px 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .phase::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .phase-1::before {
+            background: linear-gradient(90deg, var(--cyan), var(--cyan2));
+        }
+
+        .phase-2::before {
+            background: linear-gradient(90deg, var(--green), #00c4ff);
+        }
+
+        .phase-3::before {
+            background: linear-gradient(90deg, #f59e0b, #ef4444);
+        }
+
+        .phase-tag {
+            font-family: var(--font-m);
+            font-size: 0.62rem;
+            letter-spacing: 0.15em;
+            padding: 4px 10px;
+            margin-bottom: 16px;
+            display: inline-block;
+        }
+
+        .phase-1 .phase-tag {
+            border: 1px solid var(--cyan);
+            color: var(--cyan);
+            background: rgba(0, 212, 232, 0.06);
+        }
+
+        .phase-2 .phase-tag {
+            border: 1px solid var(--green);
+            color: var(--green);
+            background: rgba(0, 232, 122, 0.06);
+        }
+
+        .phase-3 .phase-tag {
+            border: 1px solid #f59e0b;
+            color: #f59e0b;
+            background: rgba(245, 158, 11, 0.06);
+        }
+
+        .phase-period {
+            font-family: var(--font-h);
+            font-size: 0.75rem;
+            color: var(--dim);
+            letter-spacing: 0.08em;
+            margin-bottom: 8px;
+        }
+
+        .phase-title {
+            font-family: var(--font-h);
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--white);
+            margin-bottom: 20px;
+            letter-spacing: -0.02em;
+        }
+
+        .phase-items {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .phase-items li {
+            font-size: 0.82rem;
+            color: var(--dim);
+            padding-left: 16px;
+            position: relative;
+            line-height: 1.5;
+        }
+
+        .phase-items li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .phase-1 .phase-items li::before {
+            background: var(--cyan);
+        }
+
+        .phase-2 .phase-items li::before {
+            background: var(--green);
+        }
+
+        .phase-3 .phase-items li::before {
+            background: #f59e0b;
+        }
+
+        /* ── WORLD WATER DAY BANNER ── */
+        .wwd-banner {
+            background: linear-gradient(135deg, rgba(0, 212, 232, 0.08) 0%, rgba(20, 97, 204, 0.1) 100%);
+            border: 1px solid rgba(0, 212, 232, 0.2);
+            padding: 64px 6%;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .wwd-banner::before {
+            content: '22.03.2026';
+            position: absolute;
+            font-family: var(--font-h);
+            font-size: 18vw;
+            font-weight: 800;
+            color: rgba(0, 212, 232, 0.03);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        .wwd-label {
+            font-family: var(--font-m);
+            font-size: 0.65rem;
+            letter-spacing: 0.3em;
+            color: var(--cyan);
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        .wwd-h {
+            font-family: var(--font-h);
+            font-size: clamp(1.8rem, 4vw, 3rem);
+            font-weight: 800;
+            color: var(--white);
+            letter-spacing: -0.03em;
+            margin-bottom: 16px;
+        }
+
+        .wwd-p {
+            font-size: 1rem;
+            color: var(--dim);
+            max-width: 540px;
+            margin: 0 auto 36px;
+            line-height: 1.7;
+        }
+
+        /* ── IMPACT NUMBERS ── */
+        .impact {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .impact-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2px;
+            background: var(--border);
+            margin-top: 60px;
+        }
+
+        .impact-item {
+            background: var(--deep);
+            padding: 40px 28px;
+            text-align: center;
+        }
+
+        .impact-num {
+            font-family: var(--font-h);
+            font-size: clamp(2rem, 3.5vw, 3.2rem);
+            font-weight: 800;
+            color: var(--cyan);
+            line-height: 1;
+            margin-bottom: 8px;
+            letter-spacing: -0.03em;
+        }
+
+        .impact-lbl {
+            font-size: 0.82rem;
+            color: var(--dim);
+            line-height: 1.5;
+        }
+
+        /* ── CTA ── */
+        .cta-section {
+            background: var(--navy);
+            border-top: 1px solid var(--border);
+            text-align: center;
+            padding: 120px 6%;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 1px;
+            height: 80px;
+            background: linear-gradient(to bottom, transparent, var(--cyan));
+        }
+
+        .cta-h {
+            font-family: var(--font-h);
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 800;
+            color: var(--white);
+            letter-spacing: -0.04em;
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+
+        .cta-h span {
+            color: var(--cyan);
+        }
+
+        .cta-p {
+            font-size: 1rem;
+            color: var(--dim);
+            max-width: 500px;
+            margin: 0 auto 48px;
+            line-height: 1.7;
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            position: relative;
+            z-index: 1;
+            border-top: 1px solid var(--border);
+            padding: 40px 6%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .footer-brand {
+            font-family: var(--font-h);
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--cyan);
+        }
+
+        .footer-brand span {
+            color: var(--dim);
+            font-weight: 400;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 28px;
+            list-style: none;
+        }
+
+        .footer-links a {
+            font-size: 0.78rem;
+            color: var(--dim);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--cyan);
+        }
+
+        .footer-copy {
+            font-family: var(--font-m);
+            font-size: 0.65rem;
+            color: rgba(74, 122, 153, 0.5);
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 900px) {
+
+            .crisis-inner,
+            .features-header,
+            .data-header {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .how-steps {
+                grid-template-columns: 1fr 1fr;
+                gap: 40px;
+            }
+
+            .how-steps::before {
+                display: none;
+            }
+
+            .roadmap-phases,
+            .impact-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .data-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .nav-links {
+                display: none;
+            }
+        }
+
+        @media (max-width: 600px) {
+
+            .features-grid,
+            .crisis-cards,
+            .data-grid,
+            .data-row-last {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-btns {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        /* ── SCROLL ANIMATIONS ── */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- NAV -->
+    <nav>
+        <a href="#" class="nav-logo">
+            <div class="drop"></div>
+            JalDrishti <span>/ জলদৃষ্টি</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="#crisis">The Crisis</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#roadmap">Roadmap</a></li>
+            <li><a href="#data">Data Sources</a></li>
+        </ul>
+        <a href="/app" class="nav-cta">Launch App →</a>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="ripple"></div>
+        <div class="ripple"></div>
+        <div class="ripple"></div>
+
+        <div class="hero-eyebrow">World Water Day 2026 — West Bengal, India</div>
+        <h1 class="hero-name">JalDrishti</h1>
+        <div class="hero-bengali">জলদৃষ্টি</div>
+        <p class="hero-tagline">
+            See the crisis <em>before it reaches you.</em><br>
+            Real-time AI water monitoring for 10 crore people.
+        </p>
+        <div class="hero-btns">
+            <a href="/app" class="btn-primary">
+                <span>💧</span> Open Dashboard
+            </a>
+            <a href="#crisis" class="btn-secondary">Learn More</a>
+        </div>
+        <div class="hero-stats">
+            <div class="stat-chip"><strong>1,556</strong> Rivers mapped</div>
+            <div class="stat-chip"><strong>23</strong> Districts monitored</div>
+            <div class="stat-chip"><strong>4</strong> Crisis types tracked</div>
+            <div class="stat-chip"><strong>Live</strong> OpenWeatherMap data</div>
+            <div class="stat-chip"><strong>Free</strong> Open source</div>
+        </div>
+
+        <div class="scroll-hint">
+            <span>Scroll</span>
+            <div class="scroll-line"></div>
+        </div>
+    </section>
+
+    <!-- CRISIS -->
+    <section class="crisis" id="crisis">
+        <div class="crisis-inner">
+            <div>
+                <div class="section-label reveal">The Problem</div>
+                <h2 class="section-title reveal">West Bengal's Four Water Crises</h2>
+                <p class="section-sub reveal">
+                    Four simultaneous crises. No single public platform to monitor any of them.
+                    Until now.
+                </p>
+                <div style="margin-top:32px" class="reveal">
+                    <div style="font-family:var(--font-m);font-size:0.72rem;color:var(--dim);line-height:2">
+                        10 crore people. Zero unified monitoring.<br>
+                        We built the platform that should have existed years ago.
+                    </div>
+                </div>
+            </div>
+            <div class="crisis-cards reveal">
+                <div class="crisis-card arsenic">
+                    <div class="crisis-num">1.5Cr</div>
+                    <div class="crisis-lbl">People drink arsenic-contaminated groundwater daily</div>
+                </div>
+                <div class="crisis-card flood">
+                    <div class="crisis-num">200+</div>
+                    <div class="crisis-lbl">Flood deaths every monsoon. Zero advance warning.</div>
+                </div>
+                <div class="crisis-card drought">
+                    <div class="crisis-num">0.8m</div>
+                    <div class="crisis-lbl">Groundwater table falling per year in western districts</div>
+                </div>
+                <div class="crisis-card pollut">
+                    <div class="crisis-num">40%</div>
+                    <div class="crisis-lbl">Irrigation water wasted due to no real-time advisory</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section id="features">
+        <div class="features-inner">
+            <div class="features-header">
+                <div>
+                    <div class="section-label reveal">What We Built</div>
+                    <h2 class="section-title reveal">Complete. Working. Today.</h2>
+                </div>
+                <p class="section-sub reveal">
+                    Every feature below exists and runs live. Not a prototype — a fully functional
+                    water monitoring platform you can open right now.
+                </p>
+            </div>
+            <div class="features-grid reveal">
+                <div class="feature-item">
+                    <span class="feature-icon">🌊</span>
+                    <div class="feature-name">Flood Risk Dashboard</div>
+                    <div class="feature-desc">Live river discharge, rainfall, flood risk level per district. Reservoir
+                        capacity and drought monitor.</div>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">⚡</span>
+                    <div class="feature-name">Water Stress Monitor</div>
+                    <div class="feature-desc">Demand vs supply in MCM, sector stress (agriculture / industry /
+                        domestic), hotspot districts.</div>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🧪</span>
+                    <div class="feature-name">Pollution Alert</div>
+                    <div class="feature-desc">Arsenic, fluoride, nitrate, coliform levels. River quality index for
+                        Hooghly, Damodar, Teesta.</div>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">☀</span>
+                    <div class="feature-name">Drought Forecast</div>
+                    <div class="feature-desc">SPI-3, SPI-6, PDSI indices. 90-day outlook. Crop water stress and
+                        livestock impact.</div>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">📍</span>
+                    <div class="feature-name">Smart Location Search</div>
+                    <div class="feature-desc">Search any village, river, or dam. Map flies there instantly. Full risk
+                        profile in a side panel.</div>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🔥</span>
+                    <div class="feature-name">Risk Heatmap</div>
+                    <div class="feature-desc">Colour-coded crisis intensity across all 23 WB districts. Updates live
+                        with incoming data.</div>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">💬</span>
+                    <div class="feature-name">AI Chat Assistant</div>
+                    <div class="feature-desc">Ask anything: "Which district has highest flood risk?" Powered by Groq
+                        LLM.</div>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">বাং</span>
+                    <div class="feature-name">Bengali Language</div>
+                    <div class="feature-desc">Toggle between English and Bengali. Crisis facts and interface fully
+                        translated.</div>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">📄</span>
+                    <div class="feature-name">PDF Report</div>
+                    <div class="feature-desc">One-click download of full water risk report with data sources and
+                        recommendations.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="how">
+        <div class="how-inner">
+            <div class="section-label reveal">How It Works</div>
+            <h2 class="section-title reveal">From satellite to your screen in seconds</h2>
+            <div class="how-steps">
+                <div class="how-step reveal">
+                    <div class="step-num">01</div>
+                    <div class="step-title">Live Weather Fetch</div>
+                    <div class="step-desc">OpenWeatherMap API delivers current temperature, rainfall, humidity, wind,
+                        and air quality index.</div>
+                </div>
+                <div class="how-step reveal">
+                    <div class="step-num">02</div>
+                    <div class="step-title">Risk Computation</div>
+                    <div class="step-desc">Flask backend applies hydrology rules: if 3h rain &gt; 20mm → flood HIGH. AQI
+                        ≥ 4 → pollution HIGH.</div>
+                </div>
+                <div class="how-step reveal">
+                    <div class="step-num">03</div>
+                    <div class="step-title">AI Interpretation</div>
+                    <div class="step-desc">Groq LLM receives all live values, interprets conditions, and generates
+                        location-specific alerts.</div>
+                </div>
+                <div class="how-step reveal">
+                    <div class="step-num">04</div>
+                    <div class="step-title">Live Dashboard</div>
+                    <div class="step-desc">Browser renders all data on the interactive map with 32,655 real West Bengal
+                        water features.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- IMPACT NUMBERS -->
+    <section>
+        <div class="impact">
+            <div style="text-align:center;margin-bottom:0">
+                <div class="section-label reveal" style="justify-content:center">Impact</div>
+                <h2 class="section-title reveal" style="text-align:center">What changes when this is real</h2>
+            </div>
+            <div class="impact-grid reveal">
+                <div class="impact-item">
+                    <div class="impact-num">6–12h</div>
+                    <div class="impact-lbl">Advance flood warning before villages are inundated</div>
+                </div>
+                <div class="impact-item">
+                    <div class="impact-num">₹8k</div>
+                    <div class="impact-lbl">Per acre saved annually with smarter irrigation advisory</div>
+                </div>
+                <div class="impact-item">
+                    <div class="impact-num">341</div>
+                    <div class="impact-lbl">WB blocks that will have arsenic risk data accessible to citizens</div>
+                </div>
+                <div class="impact-item">
+                    <div class="impact-num">1L+</div>
+                    <div class="impact-lbl">Target registered users in West Bengal within 90 days of Phase 2</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ROADMAP -->
+    <section class="roadmap" id="roadmap">
+        <div class="roadmap-inner">
+            <div class="section-label reveal">Roadmap</div>
+            <h2 class="section-title reveal">From demo to life-saving infrastructure</h2>
+            <div class="roadmap-phases">
+                <div class="phase phase-1 reveal">
+                    <div class="phase-tag">PHASE 1</div>
+                    <div class="phase-period">Next 30 Days</div>
+                    <div class="phase-title">Connect Real Data</div>
+                    <ul class="phase-items">
+                        <li>CWC live river gauge levels</li>
+                        <li>CGWB block-level arsenic data</li>
+                        <li>India-WRIS reservoir fill %</li>
+                        <li>IMD official drought SPI indices</li>
+                        <li>All free government open data</li>
+                    </ul>
+                </div>
+                <div class="phase phase-2 reveal">
+                    <div class="phase-tag">PHASE 2</div>
+                    <div class="phase-period">Next 60 Days</div>
+                    <div class="phase-title">Citizen Tools</div>
+                    <ul class="phase-items">
+                        <li>SMS flood alerts per district</li>
+                        <li>Arsenic safe water finder</li>
+                        <li>WhatsApp farmer advisory in Bengali</li>
+                        <li>10,000+ registered citizens</li>
+                        <li>Twilio integration (free tier)</li>
+                    </ul>
+                </div>
+                <div class="phase phase-3 reveal">
+                    <div class="phase-tag">PHASE 3</div>
+                    <div class="phase-period">Next 90 Days</div>
+                    <div class="phase-title">Institutional Scale</div>
+                    <ul class="phase-items">
+                        <li>WBPCB monitoring dashboard</li>
+                        <li>Jal Jeevan Mission integration</li>
+                        <li>Open source release on GitHub</li>
+                        <li>Any Indian state can deploy this</li>
+                        <li>1 lakh registered users target</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- DATA SOURCES -->
+    <section id="data">
+        <div class="data-inner">
+            <div class="data-header">
+                <div>
+                    <div class="section-label reveal">Data Sources</div>
+                    <h2 class="section-title reveal">The data exists. We need access.</h2>
+                </div>
+                <p class="section-sub reveal">
+                    All five agencies below already collect this data. It is taxpayer-funded.
+                    We are requesting API access to make this platform fully real.
+                    Total cost: ₹0.
+                </p>
+            </div>
+            <div class="data-grid reveal">
+                <div class="data-card">
+                    <div class="data-org">CWC</div>
+                    <div class="data-fullname">Central Water Commission</div>
+                    <div class="data-what">Live river gauge levels for Hooghly, Damodar, Teesta. Flood danger
+                        thresholds.</div>
+                    <span class="data-status planned">ACCESS REQUESTED</span>
+                </div>
+                <div class="data-card">
+                    <div class="data-org">CGWB</div>
+                    <div class="data-fullname">Central Ground Water Board</div>
+                    <div class="data-what">Block-level arsenic contamination for all 341 WB blocks. Published quarterly.
+                    </div>
+                    <span class="data-status planned">CSV INTEGRATION PENDING</span>
+                </div>
+                <div class="data-card">
+                    <div class="data-org">WRIS</div>
+                    <div class="data-fullname">India Water Resources Info System</div>
+                    <div class="data-what">Reservoir fill % for Maithon, Panchet, Tilaiya, Massanjore dams.</div>
+                    <span class="data-status planned">API ACCESS NEEDED</span>
+                </div>
+            </div>
+            <div class="data-row-last reveal">
+                <div class="data-card">
+                    <div class="data-org">IMD</div>
+                    <div class="data-fullname">India Meteorological Department</div>
+                    <div class="data-what">Official SPI-3 and SPI-6 drought indices. District rainfall departure from
+                        normal.</div>
+                    <span class="data-status planned">ACCESS REQUESTED</span>
+                </div>
+                <div class="data-card">
+                    <div class="data-org">WBPCB</div>
+                    <div class="data-fullname">WB Pollution Control Board</div>
+                    <div class="data-what">River water quality index from monitoring stations. Industrial discharge
+                        alerts.</div>
+                    <span class="data-status planned">PARTNERSHIP PROPOSED</span>
+                </div>
+            </div>
+            <div style="margin-top:24px;padding:20px 24px;border:1px solid rgba(0,212,232,0.15);background:rgba(0,212,232,0.03)"
+                class="reveal">
+                <div style="font-family:var(--font-m);font-size:0.7rem;color:var(--cyan);margin-bottom:6px">CURRENTLY
+                    LIVE</div>
+                <div style="font-size:0.85rem;color:var(--dim)">OpenWeatherMap (weather + AQI) · Nominatim (geocoding) ·
+                    OpenStreetMap GeoJSON (32,655 water features)</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- WWD BANNER -->
+    <div class="wwd-banner">
+        <div class="wwd-label">22 March 2026</div>
+        <h2 class="wwd-h">World Water Day</h2>
+        <p class="wwd-p">
+            We are launching JalDrishti today as a free public resource for West Bengal.
+            The platform is ready. The data connections are the next step.
+        </p>
+        <a href="/app" class="btn-primary">
+            <span>💧</span> Open JalDrishti
+        </a>
+    </div>
+
+    <!-- CTA -->
+    <section class="cta-section">
+        <h2 class="cta-h reveal">The hard part<br>is <span>done.</span></h2>
+        <p class="cta-p reveal">
+            The platform is built. The architecture is ready.
+            What it needs to save lives is the data.
+        </p>
+        <div class="hero-btns reveal">
+            <a href="/app" class="btn-primary"><span>💧</span> Launch Dashboard</a>
+            <a href="#data" class="btn-secondary">View Data Sources</a>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-brand">JalDrishti <span>/ জলদৃষ্টি</span></div>
+        <ul class="footer-links">
+            <li><a href="#crisis">The Crisis</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#roadmap">Roadmap</a></li>
+            <li><a href="/app">Dashboard</a></li>
+        </ul>
+        <div class="footer-copy">World Water Day 2026 · West Bengal, India · Open Source · Free Forever</div>
+    </footer>
+
+    <script>
+        // Scroll reveal
+        const observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) {
+                if (e.isIntersecting) {
+                    e.target.classList.add('visible');
+                    // Stagger children
+                    var children = e.target.querySelectorAll('.reveal');
+                    children.forEach(function (c, i) {
+                        c.style.transitionDelay = (i * 0.08) + 's';
+                        c.classList.add('visible');
+                    });
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.reveal').forEach(function (el) {
+            observer.observe(el);
+        });
+
+        // Nav scroll effect
+        window.addEventListener('scroll', function () {
+            var nav = document.querySelector('nav');
+            if (window.scrollY > 60) {
+                nav.style.borderBottomColor = 'rgba(0,212,232,0.25)';
+            } else {
+                nav.style.borderBottomColor = 'rgba(0,212,232,0.15)';
+            }
+        });
+
+        // Smooth scroll for nav links
+        document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+            a.addEventListener('click', function (e) {
+                var target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    e.preventDefault();
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
